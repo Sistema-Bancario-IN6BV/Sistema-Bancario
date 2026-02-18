@@ -30,7 +30,7 @@ export const getFavorites = async (req, res) => {
 
         const filter = { isActive };
 
-        const fields = await Field.find(filter)
+        const favorites = await Favorite.find(filter)
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort(options.sort);
@@ -107,13 +107,13 @@ export const updateFavorite = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Campo actualizado exitosamente",
-            data: updatedField,
+            message: "Favorito actualizado exitosamente",
+            data: updatedFavorite,
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: "Error al actualizar campo",
+            message: "Error al actualizar favorito",
             error: error.message,
         });
     }

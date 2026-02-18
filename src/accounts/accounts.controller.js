@@ -30,7 +30,7 @@ export const getAccounts = async (req, res) => {
 
         const filter = { isActive };
 
-        const fields = await Field.find(filter)
+        const accounts = await Account.find(filter)
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort(options.sort);
@@ -90,11 +90,11 @@ export const updateAccount = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const currentField = await Field.findById(id);
-        if (!currentField) {
+        const currentAccount = await Account.findById(id);
+        if (!currentAccount) {
             return res.status(404).json({
                 success: false,
-                message: "Campo no encontrado",
+                message: "Cuenta no encontrada",
             });
         }
 
@@ -108,13 +108,13 @@ export const updateAccount = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Campo actualizado exitosamente",
-            data: updatedField,
+            message: "Cuenta actualizada exitosamente",
+            data: updatedAccount,
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: "Error al actualizar campo",
+            message: "Error al actualizar cuenta",
             error: error.message,
         });
     }
@@ -142,13 +142,13 @@ export const changeAccountStatus = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: `Campo ${action} exitosamente`,
-            data: field,
+            message: `Cuenta ${action} exitosamente`,
+            data: account,
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al cambiar el estado del campo',
+            message: 'Error al cambiar el estado de la cuenta',
             error: error.message,
         });
     }

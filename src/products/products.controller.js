@@ -30,7 +30,7 @@ export const getProducts = async (req, res) => {
 
         const filter = { isActive };
 
-        const fields = await Field.find(filter)
+        const products = await Product.find(filter)
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort(options.sort);
@@ -107,8 +107,8 @@ export const updateProduct = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Campo actualizado exitosamente",
-            data: updatedField,
+            message: "Producto actualizado exitosamente",
+            data: updatedProduct,
         });
     } catch (error) {
         res.status(500).json({

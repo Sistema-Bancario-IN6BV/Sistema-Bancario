@@ -30,7 +30,7 @@ export const getTransactions = async (req, res) => {
 
         const filter = { isActive };
 
-        const fields = await Field.find(filter)
+        const transactions = await Transaction.find(filter)
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort(options.sort);
@@ -107,8 +107,8 @@ export const updateTransaction = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "Campo actualizado exitosamente",
-            data: updatedField,
+            message: "Transacción actualizada exitosamente",
+            data: updatedTransaction,
         });
     } catch (error) {
         res.status(500).json({
