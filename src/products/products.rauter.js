@@ -1,23 +1,28 @@
 import { Router } from 'express';
-import {
-    createProduct,
-    getProducts,
-    getProductById,
-    updateProduct,
-    changeProductStatus
-} from './product.controller.js';
+import {createProduct, getProductById, getProducts, updateProduct } from './products.controller.js';
+import {validateCreateProduct, validateUpdateProductRequest, validateProductStatusChange, validateGetProductById, validateUpdateProductRequest, validateCreateProduct } from '../../middlewares/products-validators.js';
 
 const router = Router();
 
-router.post('/create', createProduct);
+router.post(
+    '/create',
+    validateCreateProduct,
+    createProduct
+)
 
-router.get('/get', getProducts);
+router.get(
+    '/get',
+    getProducts
+)
 
-router.get('/:id', getProductById);
+router.get('/:id', validateGetProductById, getProductById);
 
-router.put('/:id', updateProduct);
+router.put(
+    '/:id',
+    validateUpdateProductRequest,
+    updateProduct
 
-router.put('/:id/activate', changeProductStatus);
-router.put('/:id/deactivate', changeProductStatus);
-
+);
+router.put('/:id/activate', validateProductStatusChange, changeProductStatus);
+router.put('/:id/desactivate', validateProductStatusChange, changeProductStatus);
 export default router;

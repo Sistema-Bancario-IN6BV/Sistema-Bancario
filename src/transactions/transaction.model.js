@@ -39,7 +39,11 @@ const transactionSchema = mongoose.Schema(
         isReversed: {
             type: Boolean,
             default: false
-        }
+        },
+        isActive: {
+            type: Boolean,
+            default: true
+        }        
     },
     {
         timestamps: true,
@@ -51,5 +55,6 @@ transactionSchema.index({ sourceAccount: 1 });
 transactionSchema.index({ destinationAccount: 1 });
 transactionSchema.index({ type: 1 });
 transactionSchema.index({ createdAt: 1 });
+transactionSchema.index({ isActive: 1, transactionType: 1});
 
 export default mongoose.model('Transaction', transactionSchema);

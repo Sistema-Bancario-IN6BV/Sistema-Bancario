@@ -1,4 +1,3 @@
-'use strict';
 
 import Account from './account.model.js';
 // Crear cuenta
@@ -27,14 +26,14 @@ export const createAccount = async (req, res) => {
 // Obtener Cuentas
 export const getAccounts = async (req, res) => {
     try {
-        const { page = 1, limit = 10, status } = req.query;
+        const { page = 1, limit = 10,  isActive = true} = req.query;
 
-        const filter = status ? { status } : {};
+        const filter = { isActive };
 
-        const accounts = await Account.find(filter)
+        const fields = await Field.find(filter)
             .limit(limit * 1)
             .skip((page - 1) * limit)
-            .sort({ createdAt: -1 });
+            .sort(options.sort);
 
         const total = await Account.countDocuments(filter);
 
@@ -91,30 +90,32 @@ export const updateAccount = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const updatedAccount = await Account.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedAccount) {
+        const currentField = await Field.findById(id);
+        if (!currentField) {
             return res.status(404).json({
                 success: false,
-                message: 'Cuenta no encontrada'
+                message: "Campo no encontrado",
             });
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Cuenta actualizada exitosamente',
-            data: updatedAccount
+        const updateData = { ...req.body };
+
+
+        const updatedAccount = await Account.findByIdAndUpdate(id, updateData, {
+            new: true,
+            runValidators: true,
         });
 
+        res.status(200).json({
+            success: true,
+            message: "Campo actualizado exitosamente",
+            data: updatedField,
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al actualizar la cuenta',
-            error: error.message
+            message: "Error al actualizar campo",
+            error: error.message,
         });
     }
 };
@@ -122,31 +123,33 @@ export const updateAccount = async (req, res) => {
 export const changeAccountStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        // Detectar si es activate o deactivate desde la URL
+        const isActive = req.url.includes('/activate');
+        const action = isActive ? 'activado' : 'desactivado';
+
         const account = await Account.findByIdAndUpdate(
             id,
-            { status },
+            { isActive },
             { new: true }
         );
 
         if (!account) {
             return res.status(404).json({
                 success: false,
-                message: 'Cuenta no encontrada'
+                message: 'Cuenta no encontrada',
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Estado actualizado correctamente',
-            data: account
+            message: `Campo ${action} exitosamente`,
+            data: field,
         });
-
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al cambiar el estado',
-            error: error.message
+            message: 'Error al cambiar el estado del campo',
+            error: error.message,
         });
     }
 };

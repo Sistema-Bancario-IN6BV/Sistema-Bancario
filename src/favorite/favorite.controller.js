@@ -1,7 +1,5 @@
-'use strict';
 
-import Favorite from './favorite.model.js';
-
+import Favorite from './favorite.model.js'
 // Crear favorito
 export const createFavorite = async (req, res) => {
     try {
@@ -19,24 +17,23 @@ export const createFavorite = async (req, res) => {
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: 'Error al crear favorito',
+            message: 'Error al crear la cuenta',
             error: error.message
         });
     }
 };
 
-// Obtener favoritos
+// Obtener Favoritos
 export const getFavorites = async (req, res) => {
     try {
-        const { page = 1, limit = 10, externalUserId } = req.query;
+        const { page = 1, limit = 10,  isActive = true} = req.query;
 
-        const filter = externalUserId ? { externalUserId } : {};
+        const filter = { isActive };
 
-        const favorites = await Favorite.find(filter)
-            .populate('accountId') // 🔗 trae datos de la cuenta
+        const fields = await Field.find(filter)
             .limit(limit * 1)
             .skip((page - 1) * limit)
-            .sort({ createdAt: -1 });
+            .sort(options.sort);
 
         const total = await Favorite.countDocuments(filter);
 
@@ -54,19 +51,18 @@ export const getFavorites = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al obtener favoritos',
+            message: 'Error al obtener las cuentas',
             error: error.message
         });
     }
 };
 
-// Obtener campo por ID
+// Obtener favorito por ID
 export const getFavoriteById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const favorite = await Favorite.findById(id).populate('accountId');
-
+        const favorite = await Favorite.findById(id);
         if (!favorite) {
             return res.status(404).json({
                 success: false,
@@ -82,7 +78,7 @@ export const getFavoriteById = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al obtener favorito',
+            message: 'Error al obtener la cuenta',
             error: error.message
         });
     }
@@ -93,57 +89,66 @@ export const updateFavorite = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const updatedFavorite = await Favorite.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedFavorite) {
+        const currentFavorite = await Favorite.findById(id);
+        if (!currentFavorite) {
             return res.status(404).json({
                 success: false,
-                message: 'Favorito no encontrado'
+                message: "Campo no encontrado",
             });
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Favorito actualizado exitosamente',
-            data: updatedFavorite
+        const updateData = { ...req.body };
+
+
+        const updatedFavorite = await Favorite.findByIdAndUpdate(id, updateData, {
+            new: true,
+            runValidators: true,
         });
 
+        res.status(200).json({
+            success: true,
+            message: "Campo actualizado exitosamente",
+            data: updatedField,
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al actualizar favorito',
-            error: error.message
+            message: "Error al actualizar campo",
+            error: error.message,
         });
     }
 };
 
-export const deleteFavorite = async (req, res) => {
+export const changeFavoriteStatus = async (req, res) => {
     try {
         const { id } = req.params;
+        // Detectar si es activate o deactivate desde la URL
+        const isActive = req.url.includes('/activate');
+        const action = isActive ? 'activado' : 'desactivado';
 
-        const deletedFavorite = await Favorite.findByIdAndDelete(id);
+        const favorite = await Favorite.findByIdAndUpdate(
+            id,
+            { isActive },
+            { new: true }
+        );
 
-        if (!deletedFavorite) {
+        if (!favorite) {
             return res.status(404).json({
                 success: false,
-                message: 'Favorito no encontrado'
+                message: 'Favorito no encontrado',
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Favorito eliminado exitosamente'
+            message: `Favorito ${action} exitosamente`,
+            data: favorite,
         });
-
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al eliminar favorito',
-            error: error.message
+            message: 'Error al cambiar el estado del favorito',
+            error: error.message,
         });
     }
 };

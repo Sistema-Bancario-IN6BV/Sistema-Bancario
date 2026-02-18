@@ -1,22 +1,29 @@
 import { Router } from 'express';
-import {
-    createAccount,
-    getAccounts,
-    getAccountById,
-    updateAccount,
-    changeAccountStatus
-} from './account.controller.js';
+import {createAccount, getAccountById, getAccounts, updateAccount } from './accounts.controller.js';
+import {validateCreateAccount, validateUpdateAccountRequest, validateAccountStatusChange, validateGetAccountById, validateUpdateAccountRequest } from '../../middlewares/account-validators.js';
 
 const router = Router();
 
-router.post('/create', createAccount);
+router.post(
+    '/create',  
+    validateCreateAccount,
+    createAccount
+)
 
-router.get('/get', getAccounts);
+router.get(
+    '/get',
+    getAccounts
+)
 
-router.get('/:id', getAccountById);
+router.get('/:id', validateGetAccountById, getAccountById);
 
-router.put('/:id', updateAccount);
+router.put(
+    '/:id',
+    validateUpdateAccountRequest,
+    updateAccount
 
-router.put('/:id/status', changeAccountStatus);
+);
+router.put('/:id/activate', validateAccountStatusChange, changeAccountStatus);
+router.put('/:id/desactivate', validateAccountStatusChange, changeAccountStatus);
 
 export default router;

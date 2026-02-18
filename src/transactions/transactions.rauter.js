@@ -1,22 +1,28 @@
 import { Router } from 'express';
-import {
-    createTransaction,
-    getTransactions,
-    getTransactionById,
-    updateTransaction,
-    reverseTransaction
-} from './transaction.controller.js';
+import {createTransaction, createTransaction, getTransactionById, getTransactions, getTransactions, updateTransaction } from './transaction.controller.js';
+import {validateCreateTransaction, validateUpdateTransactionRequest, validateTransactionStatusChange, validateGetTransactionById, validateUpdateTransactionRequest, validateCreateTransaction } from '../../middlewares/transaction-validators.js';
 
 const router = Router();
 
-router.post('/create', createTransaction);
+router.post(
+    '/create',
+    validateCreateTransaction,
+    createTransaction
+)
 
-router.get('/get', getTransactions);
+router.get(
+    '/get',
+    getTransactions
+)
 
-router.get('/:id', getTransactionById);
+router.get('/:id', validateGetTransactionById, getTransactionById);
 
-router.put('/:id', updateTransaction);
+router.put(
+    '/:id',
+    validateUpdateTransactionRequest,
+    updateTransaction   
 
-router.put('/:id/reverse', reverseTransaction);
-
+);
+router.put('/:id/activate', validateTransactionStatusChange, changeTransactionStatus);
+router.put('/:id/desactivate', validateTransactionStatusChange, changeTransactionStatus);
 export default router;

@@ -1,7 +1,5 @@
-'use strict';
 
 import Transaction from './transaction.model.js';
-
 // Crear transacción
 export const createTransaction = async (req, res) => {
     try {
@@ -19,25 +17,23 @@ export const createTransaction = async (req, res) => {
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: 'Error al crear transacción',
+            message: 'Error al crear la cuenta',
             error: error.message
         });
     }
 };
 
-// Obtener transacciones
+// Obtener Transacciones
 export const getTransactions = async (req, res) => {
     try {
-        const { page = 1, limit = 10, type } = req.query;
+        const { page = 1, limit = 10,  isActive = true} = req.query;
 
-        const filter = type ? { type } : {};
+        const filter = { isActive };
 
-        const transactions = await Transaction.find(filter)
-            .populate('sourceAccount')
-            .populate('destinationAccount')
+        const fields = await Field.find(filter)
             .limit(limit * 1)
             .skip((page - 1) * limit)
-            .sort({ createdAt: -1 });
+            .sort(options.sort);
 
         const total = await Transaction.countDocuments(filter);
 
@@ -55,21 +51,18 @@ export const getTransactions = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al obtener transacciones',
+            message: 'Error al obtener las cuentas',
             error: error.message
         });
     }
 };
 
-// Obtener por ID
+// Obtener transacción por ID
 export const getTransactionById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const transaction = await Transaction.findById(id)
-            .populate('sourceAccount')
-            .populate('destinationAccount');
-
+        const transaction = await Transaction.findById(id);
         if (!transaction) {
             return res.status(404).json({
                 success: false,
@@ -85,7 +78,7 @@ export const getTransactionById = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al obtener transacción',
+            message: 'Error al obtener la transacción',
             error: error.message
         });
     }
@@ -96,76 +89,66 @@ export const updateTransaction = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const updatedTransaction = await Transaction.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedTransaction) {
+        const currentTransaction = await Transaction.findById(id);
+        if (!currentTransaction) {
             return res.status(404).json({
                 success: false,
-                message: 'Transacción no encontrada'
+                message: "Transacción no encontrada",
             });
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Transacción actualizada exitosamente',
-            data: updatedTransaction
+        const updateData = { ...req.body };
+
+
+        const updatedTransaction = await Transaction.findByIdAndUpdate(id, updateData, {
+            new: true,
+            runValidators: true,
         });
 
+        res.status(200).json({
+            success: true,
+            message: "Campo actualizado exitosamente",
+            data: updatedField,
+        });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al actualizar transacción',
-            error: error.message
+            message: "Error al actualizar campo",
+            error: error.message,
         });
     }
 };
 
-// Reversar transacción
-export const reverseTransaction = async (req, res) => {
+export const changeTransactionStatus = async (req, res) => {
     try {
         const { id } = req.params;
+        // Detectar si es activate o deactivate desde la URL
+        const isActive = req.url.includes('/activate');
+        const action = isActive ? 'activado' : 'desactivado';
 
-        const transaction = await Transaction.findById(id);
+        const transaction = await Transaction.findByIdAndUpdate(
+            id,
+            { isActive },
+            { new: true }
+        );
 
         if (!transaction) {
             return res.status(404).json({
                 success: false,
-                message: 'Transacción no encontrada'
+                message: 'Transacción no encontrada',
             });
         }
-
-        if (!transaction.isReversible) {
-            return res.status(400).json({
-                success: false,
-                message: 'Esta transacción no se puede reversar'
-            });
-        }
-
-        if (transaction.isReversed) {
-            return res.status(400).json({
-                success: false,
-                message: 'La transacción ya fue reversada'
-            });
-        }
-
-        transaction.isReversed = true;
-        await transaction.save();
 
         res.status(200).json({
             success: true,
-            message: 'Transacción reversada exitosamente',
-            data: transaction
+            message: `Transacción ${action} exitosamente`,
+            data: transaction,
         });
-
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Error al reversar transacción',
-            error: error.message
+            message: 'Error al cambiar el estado de la transacción',
+            error: error.message,
         });
     }
 };
