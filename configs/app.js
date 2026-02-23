@@ -10,6 +10,8 @@ import { helmetConfiguration } from './helmet-configuration.js';
 import { requestLimit } from '../middlewares/request-limit.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
 
+import userRoutes from '../src/users/user.routes.js';
+import accountRoutes from '../src/accounts/accounts.routes.js';
 
 const BASE_PATH = '/bankSystem/v1';
 
@@ -24,14 +26,19 @@ const middlewares = (app) => {
 
 const routes = (app) => {
 
-    // Health check
+    //  Health check
     app.get(`${BASE_PATH}/health`, (req, res) => {
         res.status(200).json({
+            success: true,
             status: 'Healthy',
             timestamp: new Date().toISOString(),
             service: 'Bank System API'
         });
     });
+
+    //  RUTAS PRINCIPALES
+    app.use(`${BASE_PATH}/users`, userRoutes);
+    app.use(`${BASE_PATH}/accounts`, accountRoutes);
 
     // 404
     app.use((req, res) => {
@@ -56,12 +63,12 @@ export const initServer = async () => {
         app.use(errorHandler);
 
         app.listen(PORT, () => {
-            console.log(`Bank System server running on port ${PORT}`);
-            console.log(`Health check: http://localhost:${PORT}${BASE_PATH}/health`);
+            console.log(`🚀 Bank System server running on port ${PORT}`);
+            console.log(`🔎 Health check: http://localhost:${PORT}${BASE_PATH}/health`);
         });
 
     } catch (error) {
-        console.error(`Error starting Bank Server: ${error.message}`);
+        console.error(` Error starting Bank Server: ${error.message}`);
         process.exit(1);
     }
 };

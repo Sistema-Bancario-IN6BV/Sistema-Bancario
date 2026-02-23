@@ -4,17 +4,16 @@ import mongoose from "mongoose";
 
 const accountSchema = mongoose.Schema(
     {
+        accountNumber: {
+            type: String,
+            required: true,
+            unique: true,
+            trim: true
+        },
         externalUserId: {
             type: String,
             required: [true, 'External user id is required'],
             trim: true
-        },
-        accountNumber: {
-            type: String,
-            required: [true, 'Account number is required'],
-            unique: true,
-            trim: true,
-            maxLength: [20, 'Account number cannot exceed 20 characters']
         },
         balance: {
             type: Number,
@@ -37,8 +36,5 @@ const accountSchema = mongoose.Schema(
         versionKey: false
     }
 );
-
-accountSchema.index({ externalUserId: 1 });
-accountSchema.index({ accountNumber: 1 });
 
 export default mongoose.model('Account', accountSchema);
