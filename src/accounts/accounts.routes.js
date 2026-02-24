@@ -7,7 +7,8 @@ import {
     getAccountByNumber,
     deposit,
     withdraw,
-    deleteAccount
+    deleteAccount,
+    transfer
 } from './accounts.controller.js';
 
 const router = Router();
@@ -17,6 +18,7 @@ router.get('/', getAccounts);
 router.get('/:accountNumber', getAccountByNumber);
 router.patch('/deposit/:accountNumber', deposit);
 router.patch('/withdraw/:accountNumber', withdraw);
+router.post('/transfer', transfer);
 router.delete('/:accountNumber', deleteAccount);
 
 export default router;

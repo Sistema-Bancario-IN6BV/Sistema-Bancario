@@ -1,20 +1,25 @@
+'use strict'
+
 import { Schema, model } from 'mongoose';
 
-const accountSchema = Schema({
-    accountNumber: {
+const userSchema = Schema({
+    name: {
         type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true,
         unique: true
     },
-    balance: {
-        type: Number,
-        required: true,
-        min: 100
-    },
-    owner: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
+    password: {
+        type: String,
         required: true
     }
+},
+{
+    timestamps: true,
+    versionKey: false
 });
 
-export default model('Account', accountSchema);
+export default model('User', userSchema);

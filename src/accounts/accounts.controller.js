@@ -1,166 +1,240 @@
 'use strict';
 
 import Account from './accounts.model.js';
+import { generateAccountNumber } from '../users/user.controller.js';
 
-// Crear cuenta
+/* ===============================
+   CREAR CUENTA
+=================================*/
 export const createAccount = async (req, res) => {
     try {
-        const { balance, externalUserId } = req.body;
+        const { externalUserId } = req.body;
 
-        if (!externalUserId) {
+        if (!externalUserId)
             return res.status(400).json({
                 message: 'External user id is required'
             });
-        }
 
-        if (balance < 100) {
-            return res.status(400).json({
-                message: 'El ingreso mínimo es Q100'
-            });
-        }
+        const accountNumber = await generateAccountNumber();
 
-        const accountNumber = Math.floor(
-            1000000000 + Math.random() * 9000000000
-        ).toString();
-
-        const account = new Account({
+        const account = await Account.create({
             accountNumber,
-            balance,
-            externalUserId
+            externalUserId,
+            balance: 0
         });
 
-        await account.save();
+        return res.status(201).json(account);
 
-        return res.status(201).json({
-            message: 'Cuenta creada',
-            account
-        });
-
-    } catch (err) {
+    } catch (error) {
+        console.error(error);
         return res.status(500).json({
-            message: 'Error al crear cuenta',
-            err
+            message: error.message
         });
     }
 };
 
-// Obtener todas las cuentas
+/* ===============================
+   OBTENER TODAS LAS CUENTAS
+=================================*/
 export const getAccounts = async (req, res) => {
     try {
         const accounts = await Account.find();
-        return res.status(200).json(accounts);
-    } catch (err) {
+        return res.json(accounts);
+    } catch (error) {
         return res.status(500).json({
-            message: 'Error al obtener cuentas',
-            err
+            message: error.message
         });
     }
 };
 
-// Obtener cuenta por número
+/* ===============================
+   OBTENER CUENTA POR NUMERO
+=================================*/
 export const getAccountByNumber = async (req, res) => {
     try {
         const { accountNumber } = req.params;
 
         const account = await Account.findOne({ accountNumber });
 
-        if (!account) {
+        if (!account)
             return res.status(404).json({
-                message: 'Cuenta no encontrada'
+                message: 'Account not found'
             });
-        }
 
-        return res.status(200).json(account);
+        return res.json(account);
 
-    } catch (err) {
+    } catch (error) {
         return res.status(500).json({
-            message: 'Error al buscar cuenta',
-            err
+            message: error.message
         });
     }
 };
 
-// Depositar
+/* ===============================
+   DEPOSITAR
+=================================*/
 export const deposit = async (req, res) => {
     try {
         const { accountNumber } = req.params;
         const { amount } = req.body;
 
+        if (!amount || amount <= 0)
+            return res.status(400).json({
+                message: 'Amount must be greater than 0'
+            });
+
         const account = await Account.findOne({ accountNumber });
 
-        if (!account) {
+        if (!account)
             return res.status(404).json({
-                message: 'Cuenta no encontrada'
+                message: 'Account not found'
             });
-        }
 
-        account.balance += amount;
+        if (account.status !== 'ACTIVE')
+            return res.status(400).json({
+                message: 'Account is not active'
+            });
+
+        account.balance += Number(amount);
         await account.save();
 
-        return res.status(200).json({
-            message: 'Depósito exitoso',
+        return res.json({
+            message: 'Deposit successful',
             account
         });
 
-    } catch (err) {
+    } catch (error) {
         return res.status(500).json({
-            message: 'Error al depositar',
-            err
+            message: error.message
         });
     }
 };
 
-// Retirar
+/* ===============================
+   RETIRAR
+=================================*/
 export const withdraw = async (req, res) => {
     try {
         const { accountNumber } = req.params;
         const { amount } = req.body;
 
+        if (!amount || amount <= 0)
+            return res.status(400).json({
+                message: 'Amount must be greater than 0'
+            });
+
         const account = await Account.findOne({ accountNumber });
 
-        if (!account) {
+        if (!account)
             return res.status(404).json({
-                message: 'Cuenta no encontrada'
+                message: 'Account not found'
             });
-        }
 
-        if (account.balance < amount) {
+        if (account.status !== 'ACTIVE')
             return res.status(400).json({
-                message: 'Fondos insuficientes'
+                message: 'Account is not active'
             });
-        }
 
-        account.balance -= amount;
+        if (account.balance < amount)
+            return res.status(400).json({
+                message: 'Insufficient funds'
+            });
+
+        account.balance -= Number(amount);
         await account.save();
 
-        return res.status(200).json({
-            message: 'Retiro exitoso',
+        return res.json({
+            message: 'Withdraw successful',
             account
         });
 
-    } catch (err) {
+    } catch (error) {
         return res.status(500).json({
-            message: 'Error al retirar',
-            err
+            message: error.message
         });
     }
 };
 
-// Eliminar cuenta
+/* ===============================
+   ELIMINAR CUENTA
+=================================*/
 export const deleteAccount = async (req, res) => {
     try {
         const { accountNumber } = req.params;
 
-        await Account.findOneAndDelete({ accountNumber });
+        const deleted = await Account.findOneAndDelete({ accountNumber });
 
-        return res.status(200).json({
-            message: 'Cuenta eliminada'
+        if (!deleted)
+            return res.status(404).json({
+                message: 'Account not found'
+            });
+
+        return res.json({
+            message: 'Account deleted'
         });
 
-    } catch (err) {
+    } catch (error) {
         return res.status(500).json({
-            message: 'Error al eliminar cuenta',
-            err
+            message: error.message
+        });
+    }
+};
+/* ===============================
+   TRANSFERENCIA
+=================================*/
+export const transfer = async (req, res) => {
+    try {
+        const { fromAccountNumber, toAccountNumber, amount } = req.body;
+
+        if (!fromAccountNumber || !toAccountNumber || !amount)
+            return res.status(400).json({
+                message: 'All fields are required'
+            });
+
+        if (amount <= 0)
+            return res.status(400).json({
+                message: 'Amount must be greater than 0'
+            });
+
+        const fromAccount = await Account.findOne({ accountNumber: fromAccountNumber });
+        const toAccount = await Account.findOne({ accountNumber: toAccountNumber });
+
+        if (!fromAccount)
+            return res.status(404).json({
+                message: 'Origin account not found'
+            });
+
+        if (!toAccount)
+            return res.status(404).json({
+                message: 'Destination account not found'
+            });
+
+        if (fromAccount.status !== 'ACTIVE' || toAccount.status !== 'ACTIVE')
+            return res.status(400).json({
+                message: 'One of the accounts is not active'
+            });
+
+        if (fromAccount.balance < amount)
+            return res.status(400).json({
+                message: 'Insufficient funds'
+            });
+
+        // Transfer logic
+        fromAccount.balance -= Number(amount);
+        toAccount.balance += Number(amount);
+
+        await fromAccount.save();
+        await toAccount.save();
+
+        return res.json({
+            message: 'Transfer successful',
+            fromAccount,
+            toAccount
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message
         });
     }
 };
