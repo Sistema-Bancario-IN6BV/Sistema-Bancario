@@ -1,28 +1,13 @@
-import { Router } from 'express';
-import {createFavorite, getFavoriteById, getFavorites, updateFavorite } from './favorite.controller.js';
-import {validateCreateFavorite, validateUpdateFavoriteRequest, validateFavoriteStatusChange, validateGetFavoriteById, validateUpdateAccountRequest } from '../../middlewares/favorite-validators.js';
+import { Router } from "express";
+import { addFavorite, updateFavorite, deleteFavorite, getMyFavorites } from "./favorite.controller.js";
+import { validateAddFavorite, validateIdFavorite } from "../../middlewares/favorite-validator.js";
+import { validateGet } from "../../middlewares/account-validator.js";
 
-const router = Router();
+const api = Router();
 
-router.post(
-    '/create',
-    validateCreateFavorite,
-    createFavorite
-)
+api.post('/create', validateAddFavorite, addFavorite);
+api.get('/', validateGet, getMyFavorites);
+api.put('/update/:id', validateIdFavorite, updateFavorite);
+api.delete('/delete/:id', validateIdFavorite, deleteFavorite);
 
-router.get(
-    '/get',
-    getFavorites
-)
-
-router.get('/:id', validateGetFavoriteById, getFavoriteById);
-
-router.put(
-    '/:id',
-    validateUpdateFavoriteRequest,
-    updateFavorite
-
-);
-router.put('/:id/activate', validateFavoriteStatusChange, changeFavoriteStatus);
-router.put('/:id/desactivate', validateFavoriteStatusChange, changeFavoriteStatus);
-export default router;
+export default api;
