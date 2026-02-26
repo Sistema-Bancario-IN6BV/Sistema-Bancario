@@ -1,21 +1,28 @@
+'use strict';
 
-import Account from './account.model.js';
-// Crear cuenta
+import Account from './accounts.model.js';
+
 export const createAccount = async (req, res) => {
     try {
+
         const data = req.body;
 
-        const account = new Account(data);
+        const account = new Account({
+            ...data,
+            status: 'ACTIVE',
+            externalUserId: req.user.id 
+        });
+
         await account.save();
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: 'Cuenta creada exitosamente',
-            data: account
+            account
         });
 
     } catch (error) {
-        res.status(400).json({
+        return res.status(500).json({
             success: false,
             message: 'Error al crear la cuenta',
             error: error.message
@@ -23,42 +30,49 @@ export const createAccount = async (req, res) => {
     }
 };
 
-// Obtener Cuentas
-export const getAccounts = async (req, res) => {
+export const updateAccount = async (req, res) => {
     try {
-        const { page = 1, limit = 10,  isActive = true} = req.query;
+        const { id } = req.params;
+        const data = req.body;
 
-        const filter = { isActive };
+        const account = await Account.findById(id);
 
-        const accounts = await Account.find(filter)
-            .limit(limit * 1)
-            .skip((page - 1) * limit)
-            .sort(options.sort);
+        if (!account) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cuenta no encontrada'
+            });
+        }
 
-        const total = await Account.countDocuments(filter);
+        if (account.externalUserId !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para editar esta cuenta'
+            });
+        }
 
-        res.status(200).json({
+        const updated = await Account.findByIdAndUpdate(
+            id,
+            data,
+            { new: true, runValidators: true }
+        );
+
+        return res.json({
             success: true,
-            data: accounts,
-            pagination: {
-                currentPage: page,
-                totalPages: Math.ceil(total / limit),
-                totalRecords: total,
-                limit
-            }
+            message: 'Cuenta actualizada',
+            updated
         });
 
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: 'Error al obtener las cuentas',
+            message: 'Error al actualizar la cuenta',
             error: error.message
         });
     }
 };
 
-// Obtener campo por ID
-export const getAccountById = async (req, res) => {
+export const deleteAccount = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -71,85 +85,48 @@ export const getAccountById = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        if (account.externalUserId !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tienes permiso para eliminar esta cuenta'
+            });
+        }
+
+        await Account.findByIdAndUpdate(id, { 
+            isActive: false, 
+            status: 'CLOSED' 
+        });
+
+        return res.json({
             success: true,
-            data: account
+            message: 'Cuenta cerrada/desactivada correctamente'
         });
 
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: 'Error al obtener la cuenta',
+            message: 'Error al eliminar la cuenta',
             error: error.message
         });
     }
 };
 
-// Actualizar campo
-export const updateAccount = async (req, res) => {
+export const getMyAccounts = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        const currentAccount = await Account.findById(id);
-        if (!currentAccount) {
-            return res.status(404).json({
-                success: false,
-                message: "Cuenta no encontrada",
-            });
-        }
-
-        const updateData = { ...req.body };
-
-
-        const updatedAccount = await Account.findByIdAndUpdate(id, updateData, {
-            new: true,
-            runValidators: true,
+        const accounts = await Account.find({ 
+            externalUserId: req.user.id, 
+            isActive: true 
         });
 
-        res.status(200).json({
+        return res.json({
             success: true,
-            message: "Cuenta actualizada exitosamente",
-            data: updatedAccount,
+            accounts
         });
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
-            message: "Error al actualizar cuenta",
-            error: error.message,
-        });
-    }
-};
-
-export const changeAccountStatus = async (req, res) => {
-    try {
-        const { id } = req.params;
-        // Detectar si es activate o deactivate desde la URL
-        const isActive = req.url.includes('/activate');
-        const action = isActive ? 'activado' : 'desactivado';
-
-        const account = await Account.findByIdAndUpdate(
-            id,
-            { isActive },
-            { new: true }
-        );
-
-        if (!account) {
-            return res.status(404).json({
-                success: false,
-                message: 'Cuenta no encontrada',
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: `Cuenta ${action} exitosamente`,
-            data: account,
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error al cambiar el estado de la cuenta',
-            error: error.message,
+            message: 'Error al obtener las cuentas',
+            error: error.message
         });
     }
 };
