@@ -10,6 +10,9 @@ import { helmetConfiguration } from './helmet-configuration.js';
 import { requestLimit } from '../middlewares/request-limit.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
 
+import accountRoutes from '../src/accounts/accounts.router.js';
+import favoriteRoutes from '../src/favorite/favorite.router.js';
+import productRoutes from '../src/products/products.router.js';
 
 const BASE_PATH = '/bankSystem/v1';
 
@@ -23,6 +26,16 @@ const middlewares = (app) => {
 };
 
 const routes = (app) => {
+    // ACCOUNTS
+    app.use(`${BASE_PATH}/accounts`, accountRoutes);
+
+    // FAVORITES
+    app.use(`${BASE_PATH}/favorites`, favoriteRoutes);
+
+    // PRODUCTS
+    app.use(`${BASE_PATH}/products`, productRoutes);
+
+    
 
     // Health check
     app.get(`${BASE_PATH}/health`, (req, res) => {
