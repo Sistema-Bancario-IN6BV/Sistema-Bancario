@@ -1,28 +1,17 @@
-import { Router } from 'express';
-import {createProduct, getProductById, getProducts, updateProduct } from './products.controller.js';
-import {validateCreateProduct, validateUpdateProductRequest, validateProductStatusChange, validateGetProductById, validateUpdateProductRequest, validateCreateProduct } from '../../middlewares/products-validators.js';
+import { Router } from "express";
+import { createProduct, getProducts, updateProduct, deleteProduct, getProductById } from "./products.controller.js";
+import { validateCreateProduct, validateProductID } from "../../middlewares/product-validator.js";
+import { validateJWT } from "../../middlewares/validate-JWT.js";
 
-const router = Router();
+const api = Router();
 
-router.post(
-    '/create',
-    validateCreateProduct,
-    createProduct
-)
+// Rutas públicas (solo requieren estar logeado)
+api.get('/', validateJWT, getProducts);
+api.get('/:id', validateProductID, getProductById);
 
-router.get(
-    '/get',
-    getProducts
-)
+// Rutas de administración
+api.post('/create', validateCreateProduct, createProduct);
+api.put('/update/:id', validateCreateProduct, validateProductID, updateProduct);
+api.delete('/delete/:id', validateProductID, deleteProduct);
 
-router.get('/:id', validateGetProductById, getProductById);
-
-router.put(
-    '/:id',
-    validateUpdateProductRequest,
-    updateProduct
-
-);
-router.put('/:id/activate', validateProductStatusChange, changeProductStatus);
-router.put('/:id/desactivate', validateProductStatusChange, changeProductStatus);
-export default router;
+export default api;

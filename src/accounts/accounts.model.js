@@ -43,7 +43,6 @@ const accountSchema = mongoose.Schema(
 );
 
 accountSchema.index({ externalUserId: 1 });
-accountSchema.index({ accountNumber: 1 });
 accountSchema.index({ isActive: 1, status: 1 });
 
 export default mongoose.model('Account', accountSchema);
