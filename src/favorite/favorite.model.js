@@ -34,6 +34,6 @@ const favoriteSchema = mongoose.Schema(
 
 favoriteSchema.index({ externalUserId: 1 });
 favoriteSchema.index({ accountId: 1 });
-fieldSchema.index({ isActive: 1, fieldType: 1});
+favoriteSchema.index({ isActive: 1 , fieldType: 1});
 
 export default mongoose.model('Favorite', favoriteSchema);
