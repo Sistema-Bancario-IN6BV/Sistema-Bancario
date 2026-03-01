@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import {createTransaction, createTransaction, getTransactionById, getTransactions, getTransactions, updateTransaction } from './transaction.controller.js';
-import {validateCreateTransaction, validateUpdateTransactionRequest, validateTransactionStatusChange, validateGetTransactionById, validateUpdateTransactionRequest, validateCreateTransaction } from '../../middlewares/transaction-validators.js';
+import {createTransaction, createTransaction, getTransactionById, getTransactions, getTransactions, updateTransaction, reverseTransaction } from './transaction.controller.js';
+import {validateCreateTransaction, validateUpdateTransactionRequest, validateTransactionStatusChange, validateGetTransactionById, validateUpdateTransactionRequest, validateCreateTransaction, validateReverseTransaction } from '../../middlewares/transaction-validators.js';
 
 const router = Router();
 
@@ -25,4 +25,8 @@ router.put(
 );
 router.put('/:id/activate', validateTransactionStatusChange, changeTransactionStatus);
 router.put('/:id/desactivate', validateTransactionStatusChange, changeTransactionStatus);
+
+// Ruta para revertir un depósito
+router.post('/:id/reverse', validateReverseTransaction, reverseTransaction);
+
 export default router;
