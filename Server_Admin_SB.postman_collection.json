@@ -1,0 +1,907 @@
+{
+  "info": {
+    "_postman_id": "5083ea4b-65bf-4f60-8226-5f05eeeb4b42",
+    "name": "Server_Admin_SB",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "48083670",
+    "_collection_link": "https://go.postman.co/collection/48083670-5083ea4b-65bf-4f60-8226-5f05eeeb4b42?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Accounts",
+      "item": [
+        {
+          "name": "Get All Account",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiMzE1NDhlNDQtNTg3OS00YTNjLWEyMzItOTY4MWIyN2NmMjBiIiwiaWF0IjoxNzcyNDM5ODY4LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQ0MTY2OCwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.NYUXWP5CSqPYp-y7Q771jig5bgengoF7Zg2ezt4iFPE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/accounts/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "accounts",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.json().field) {",
+                  "    pm.environment.set('fieldId', pm.response.json().field._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiMzE1NDhlNDQtNTg3OS00YTNjLWEyMzItOTY4MWIyN2NmMjBiIiwiaWF0IjoxNzcyNDM5ODY4LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQ0MTY2OCwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.NYUXWP5CSqPYp-y7Q771jig5bgengoF7Zg2ezt4iFPE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"balance\": 1500,\r\n    \"status\": \"ACTIVE\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/accounts/create",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "accounts",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Account",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiMzcxZDk2NmYtZjU2Ni00YWMzLTk3YmYtMzRlYzI4YzQwMWJkIiwiaWF0IjoxNzcyNDM3NzMyLCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQzOTUzMiwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.m_ucMFrs03h58Q-kRV4cPtcfBR6yTweHtPWTj6U2y3I",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"accountNumber\": \"111111\",\r\n    \"balance\": 1500,\r\n    \"status\": \"ACTIVE\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/accounts/update/69a50bd658fe6ff5392f96b3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "accounts",
+                "update",
+                "69a50bd658fe6ff5392f96b3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiMzE1NDhlNDQtNTg3OS00YTNjLWEyMzItOTY4MWIyN2NmMjBiIiwiaWF0IjoxNzcyNDM5ODY4LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQ0MTY2OCwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.NYUXWP5CSqPYp-y7Q771jig5bgengoF7Zg2ezt4iFPE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/accounts/delete/699fda810146a2e9370ad871",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "accounts",
+                "delete",
+                "699fda810146a2e9370ad871"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "Get All Transactions",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfMVZkSnAxOEI5aGpFIiwianRpIjoiYWFlMDJkYWYtNmEzNC00NmI3LWEyMjItYjcwNWU0MTA0NDc1IiwiaWF0IjoxNzcyNDM4NDEzLCJyb2xlIjoiQURNSU5fUk9MRSIsImVtYWlsIjoiYWRtaW5Aa3Nwb3J0cy5sb2NhbCIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoiQWRtaW4gVXNlciIsInBob25lIjoiIiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQ0MDIxMywiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.twiVlU44t_fM3Aev1vmdIrGnnVxrEu9L9dCDHQDNjz8",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/transactions/get",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "transactions",
+                "get"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Transfer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.json().field) {",
+                  "    pm.environment.set('fieldId', pm.response.json().field._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiZGIyYTdhZGYtNTEwMi00ZDZlLWJkMGEtOTc3ZTk2ZjdiNmI3IiwiaWF0IjoxNzcyNDM1OTE0LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQzNzcxNCwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.0erIYqLr45JpXSBClNxOuwFL78thgPBjbG7iHBS84os",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"type\": \"TRANSFER\",\r\n  \"amount\": 2000,\r\n  \"sourceAccount\": \"69a517a767572fe79ab8a971\",\r\n  \"destinationAccount\": \"69a517b967572fe79ab8a974\",\r\n  \"description\": \"Transferencia de prueba\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/transactions/create",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "transactions",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Deposit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.json().field) {",
+                  "    pm.environment.set('fieldId', pm.response.json().field._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfMVZkSnAxOEI5aGpFIiwianRpIjoiZmNjYmY0YzAtN2RlMC00NGYyLWI4MDEtYTU4NDU0YWQ2YTRmIiwiaWF0IjoxNzcyNDM0MzQ4LCJyb2xlIjoiQURNSU5fUk9MRSIsImVtYWlsIjoiYWRtaW5Aa3Nwb3J0cy5sb2NhbCIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoiQWRtaW4gVXNlciIsInBob25lIjoiIiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQzNjE0OCwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.pomfkffWnFVuoyz87d62-sPLEA4a2SYUroLXeIFJEb8",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"type\": \"DEPOSIT\",\r\n  \"amount\": 10,\r\n  \"destinationAccount\": \"69a517a767572fe79ab8a971\",\r\n  \"description\": \"Depósito en efectivo\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/transactions/create",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "transactions",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Credit",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiNWQ5YWE3NjEtOTc3Ny00NTc1LWI4ZjctMjk3NzZhYmQ1Yzk5IiwiaWF0IjoxNzcyNDQzNDc1LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQ0NTI3NSwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.SnprvC6qPP9bMYHq1TvZ1VWNFEranRbAoHk5K6yWZv0",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"type\": \"CREDIT\",\r\n  \"amount\": 500,\r\n  \"destinationAccount\": \"69a517a767572fe79ab8a971\",\r\n  \"description\": \"Crédito aprobado\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/transactions/create",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "transactions",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Transaction",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfMVZkSnAxOEI5aGpFIiwianRpIjoiY2JhZGY2ZTUtMjdlNS00NmE3LTkxNWMtOTcyMjhkYjdhZDE1IiwiaWF0IjoxNzcyNDI3MTI3LCJyb2xlIjoiQURNSU5fUk9MRSIsImVtYWlsIjoiYWRtaW5Aa3Nwb3J0cy5sb2NhbCIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoiQWRtaW4gVXNlciIsInBob25lIjoiIiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQyODkyNywiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.0GnEQi5FVoGNgXEhktP8RHhPbGBApjdYUROJ8O_UPWw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"amount\": 100\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/transactions/update/69a51be1d04e5eaaaea5bbee",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "transactions",
+                "update",
+                "69a51be1d04e5eaaaea5bbee"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Revert Transaction",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/transactions/revert/69a53455068b3963442346c3",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "transactions",
+                "revert",
+                "69a53455068b3963442346c3"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Favorite",
+      "item": [
+        {
+          "name": "Get Favorite",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfQzd0c3o4SzR0amg1IiwianRpIjoiMDdkNzI5ZDAtZmM2ZS00YzFkLWE3MzAtOWE3YmNhY2E2Y2JiIiwiaWF0IjoxNzcyMDg0MDY1LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjA4NTg2NSwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.NBWyJHJczsXoQFUt8G01WXmQ7-YcOALm8GJrF8plSxw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/favorites/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "favorites",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Favorite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.json().field) {",
+                  "    pm.environment.set('fieldId', pm.response.json().field._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfQzd0c3o4SzR0amg1IiwianRpIjoiMDdkNzI5ZDAtZmM2ZS00YzFkLWE3MzAtOWE3YmNhY2E2Y2JiIiwiaWF0IjoxNzcyMDg0MDY1LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjA4NTg2NSwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.NBWyJHJczsXoQFUt8G01WXmQ7-YcOALm8GJrF8plSxw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"accountId\": \"699fda8e0146a2e9370ad873\",\r\n    \"alias\": \"Don\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/favorites/create",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "favorites",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Favorite",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfQzd0c3o4SzR0amg1IiwianRpIjoiMDdkNzI5ZDAtZmM2ZS00YzFkLWE3MzAtOWE3YmNhY2E2Y2JiIiwiaWF0IjoxNzcyMDg0MDY1LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjA4NTg2NSwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.NBWyJHJczsXoQFUt8G01WXmQ7-YcOALm8GJrF8plSxw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"alias\": \"Don Marlon\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/favorites/update/699fdbd80146a2e9370ad87d",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "favorites",
+                "update",
+                "699fdbd80146a2e9370ad87d"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Favorite",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfQzd0c3o4SzR0amg1IiwianRpIjoiMDdkNzI5ZDAtZmM2ZS00YzFkLWE3MzAtOWE3YmNhY2E2Y2JiIiwiaWF0IjoxNzcyMDg0MDY1LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjA4NTg2NSwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.NBWyJHJczsXoQFUt8G01WXmQ7-YcOALm8GJrF8plSxw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/favorites/delete/699fdbd80146a2e9370ad87d",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "favorites",
+                "delete",
+                "699fdbd80146a2e9370ad87d"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get Product",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiMzg3ZWIxYjktMjQ2NS00MzY5LThmZTQtN2FiZWVmYzU5ZmMyIiwiaWF0IjoxNzcyNDM2NDk5LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQzODI5OSwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.pnkDA592QN7KeUUUuPuDyDTGwy-pxEYmwOlcU-Jlwrw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/products/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "products",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.json().field) {",
+                  "    pm.environment.set('fieldId', pm.response.json().field._id);",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiMzg3ZWIxYjktMjQ2NS00MzY5LThmZTQtN2FiZWVmYzU5ZmMyIiwiaWF0IjoxNzcyNDM2NDk5LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQzODI5OSwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.pnkDA592QN7KeUUUuPuDyDTGwy-pxEYmwOlcU-Jlwrw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Corte de pelo\",\r\n    \"description\": \"Solo buzzcut\",\r\n    \"price\": 75\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/products/create",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "products",
+                "create"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfMVZkSnAxOEI5aGpFIiwianRpIjoiMTUwNDIyYjgtOTMzNC00NTU1LWIxNTctNDMzZmNhMTc5YTBkIiwiaWF0IjoxNzcyMDg0NTg0LCJyb2xlIjoiQURNSU5fUk9MRSIsImVtYWlsIjoiYWRtaW5Aa3Nwb3J0cy5sb2NhbCIsInVzZXJuYW1lIjoiYWRtaW4iLCJuYW1lIjoiQWRtaW4gVXNlciIsInBob25lIjoiIiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjA4NjM4NCwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.wd8r7WyczRG3AxyD6iQ1bwHvkxvVT0RvSsfxkacnHEI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"piter\",\r\n    \"description\": \"negro\",\r\n    \"price\": 1\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/products/update/699fdd770146a2e9370ad894",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "products",
+                "update",
+                "699fdd770146a2e9370ad894"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfQzd0c3o4SzR0amg1IiwianRpIjoiYTUxZjgxYmUtOGNjYy00MTQyLWE5YTYtMjVjYTBjZWQ3OGFmIiwiaWF0IjoxNzcyMDg0NDA0LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjA4NjIwNCwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.gFfUVw04ctjUYuGuDu7lvG-n7IRNepwQhyd4HaQ4dkM",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/products/delete/699fdd880146a2e9370ad896",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "products",
+                "delete",
+                "699fdd880146a2e9370ad896"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Purchase Product",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3Jfc2Q5MWFDSkNDZkFOIiwianRpIjoiOWEyZTlmNGEtYWM2OS00NzExLTk1OTUtYTg1OTU1ZGNkNGYwIiwiaWF0IjoxNzcyNDM4NTM5LCJyb2xlIjoiVVNFUl9ST0xFIiwiZW1haWwiOiJlcm9kcmlndWV6LTIwMjQyNTBAa2luYWwuZWR1Lmd0IiwidXNlcm5hbWUiOiJlcm9kcmlndWV6IiwibmFtZSI6IkVkdWFyZG8gQW5kcsOpIFJvZHLDrWd1ZXogT2Nob2EiLCJwaG9uZSI6IjEyMzQ1Njc4Iiwic3RhdHVzIjoidHJ1ZSIsImV4cCI6MTc3MjQ0MDMzOSwiaXNzIjoiQXV0aFNlcnZpY2VCYW5jYXJpbyIsImF1ZCI6IkFwaUJhbmNhcmlhIn0.W3CcOTqBhmL26potxOP9lxqeAN7mgYr5YhkBnGYLc4o",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"productId\": \"69a534f1068b3963442346ce\",\r\n  \"accountId\": \"69a50bcc58fe6ff5392f96b1\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3006/bankSystem/v1/products/purchase",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3006",
+              "path": [
+                "bankSystem",
+                "v1",
+                "products",
+                "purchase"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
