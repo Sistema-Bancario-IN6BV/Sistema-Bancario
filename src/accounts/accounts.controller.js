@@ -42,13 +42,24 @@ export const convertBalance = async (req, res) => {
     }
 };
 
+// Función para generar número de cuenta automáticamente
+const generateAccountNumber = () => {
+    const entityCode = '1008'; 
+    const randomNumber = Math.floor(Math.random() * 9000000000) + 1000000000; // 10 dígitos aleatorios
+    return `${entityCode}${randomNumber}`;
+};
+
 export const createAccount = async (req, res) => {
     try {
 
         const data = req.body;
 
+        // Generar número de cuenta automáticamente si no se proporciona
+        const accountNumber = data.accountNumber || generateAccountNumber();
+
         const account = new Account({
             ...data,
+            accountNumber,
             status: 'ACTIVE',
             externalUserId: req.user.id 
         });
