@@ -6,9 +6,8 @@ import { validateJWT } from './validate-JWT.js';
 export const validateCreateAccount = [
     validateJWT,
     body('accountNumber')
+        .optional()
         .trim()
-        .notEmpty()
-        .withMessage('El número de cuenta es requerido')
         .isLength({ max: 20 })
         .withMessage('El número de cuenta no puede exceder 20 caracteres'),
     body('balance')

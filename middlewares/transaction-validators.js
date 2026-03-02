@@ -32,6 +32,12 @@ export const validateCreateTransaction = [
         .withMessage('Amount is required')
         .isFloat({ min: 0.01 })
         .withMessage('Amount must be greater than 0')
+        .custom((value) => {
+            if (value <= 100) {
+                throw new Error('Amount must be greater than 100');
+            }
+            return true;
+        })
         .custom((value, { req }) => {
             if (req.body.type === 'TRANSFER' && value > 2000) {
                 throw new Error('You cannot transfer more than Q2000 per transaction');
