@@ -1,6 +1,46 @@
 'use strict';
-
+import { convertCurrency } from "./currency.service.js";
 import Account from './accounts.model.js';
+export const convertBalance = async (req, res) => {
+    try {
+        const { id } = req.params;
+        let { to } = req.query;
+
+        if (!to) {
+            return res.status(400).json({
+                success: false,
+                message: "Debes indicar la moneda destino ?to=USD o ?to=USD,EUR,JPY"
+            });
+        }
+
+        to = to.split(',').map(curr => curr.trim().toUpperCase());
+
+        const account = await Account.findById(id);
+
+        if (!account) {
+            return res.status(404).json({ success: false, message: "Cuenta no encontrada" });
+        }
+
+        if (account.externalUserId !== req.user.id) {
+            return res.status(403).json({ success: false, message: "No tienes permiso sobre esta cuenta" });
+        }
+
+        const converted = await convertCurrency(account.balance, "GTQ", to);
+
+        return res.json({
+            success: true,
+            saldoOriginal: account.balance,
+            monedaOrigen: "GTQ",
+            monedaDestino: to,
+            saldoConvertido: converted
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
 
 export const createAccount = async (req, res) => {
     try {
