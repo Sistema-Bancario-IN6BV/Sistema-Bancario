@@ -1,28 +1,18 @@
-import { Router } from 'express';
-import {createTransaction, createTransaction, getTransactionById, getTransactions, getTransactions, updateTransaction } from './transaction.controller.js';
-import {validateCreateTransaction, validateUpdateTransactionRequest, validateTransactionStatusChange, validateGetTransactionById, validateUpdateTransactionRequest, validateCreateTransaction } from '../../middlewares/transaction-validators.js';
+import { Router } from "express";
+import { 
+    createTransaction,
+    updateTransaction,
+    getAllTransactions,
+    revertTransaction
+} from "./transaction.controller.js";
 
-const router = Router();
+import { validateJWT } from "../../middlewares/validate-JWT.js";
 
-router.post(
-    '/create',
-    validateCreateTransaction,
-    createTransaction
-)
+const api = Router();
 
-router.get(
-    '/get',
-    getTransactions
-)
+api.post('/create', validateJWT, createTransaction);
+api.put('/update/:id', validateJWT, updateTransaction);
+api.get('/get', validateJWT, getAllTransactions);
+api.put('/revert/:id', validateJWT, revertTransaction);
 
-router.get('/:id', validateGetTransactionById, getTransactionById);
-
-router.put(
-    '/:id',
-    validateUpdateTransactionRequest,
-    updateTransaction   
-
-);
-router.put('/:id/activate', validateTransactionStatusChange, changeTransactionStatus);
-router.put('/:id/desactivate', validateTransactionStatusChange, changeTransactionStatus);
-export default router;
+export default api;

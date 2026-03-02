@@ -13,6 +13,7 @@ import { errorHandler } from '../middlewares/handle-errors.js';
 import accountRoutes from '../src/accounts/accounts.router.js';
 import favoriteRoutes from '../src/favorite/favorite.router.js';
 import productRoutes from '../src/products/products.router.js';
+import transactionRoutes from '../src/transactions/transactions.router.js';
 
 const BASE_PATH = '/bankSystem/v1';
 
@@ -35,7 +36,8 @@ const routes = (app) => {
     // PRODUCTS
     app.use(`${BASE_PATH}/products`, productRoutes);
 
-    
+    // TRANSACTIONS
+    app.use(`${BASE_PATH}/transactions`, transactionRoutes);
 
     // Health check
     app.get(`${BASE_PATH}/health`, (req, res) => {
