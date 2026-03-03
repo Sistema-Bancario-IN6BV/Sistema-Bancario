@@ -38,5 +38,11 @@ export const validateAccountStatusChange = [
         .isMongoId()
         .withMessage('ID must be a valid MongoDB ObjectId'),
 
+    body('status')
+        .notEmpty()
+        .withMessage('Status is required')
+        .isIn(['ACTIVE', 'BLOCKED', 'CLOSED'])
+        .withMessage('Invalid account status'),
+
     checkValidators,
 ];
