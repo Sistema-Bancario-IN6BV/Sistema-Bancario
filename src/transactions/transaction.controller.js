@@ -383,3 +383,37 @@ export const revertTransaction = async (req, res) => {
         });
     }
 };
+
+export const changeTransactionStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const isActive = req.url.includes('/activate');
+        const action = isActive ? 'activado' : 'desactivado';
+
+        const transaction = await Transaction.findByIdAndUpdate(
+            id, 
+            { isActive },
+            { new: true}
+        );
+
+        if (!transaction) {
+            return res.status(404).json({
+                success: false,
+                message: `Transacción no encontrada`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Transacción ${action} exitosamente`,
+            data: transaction
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error al cambiar el estado de la transacción',
+            error: error.message,
+        });
+        
+    }
+}
