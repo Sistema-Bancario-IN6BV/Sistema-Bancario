@@ -4,6 +4,13 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+
+// 🔥 Swagger (forma compatible con Node 22 + ESM)
+import pkg from 'swagger-ui-express';
+const { serve, setup } = pkg;
+
+import swaggerSpec from './swagger.js';
+
 import { dbConnection } from './db.js';
 import { corsOptions } from './cors-configuration.js';
 import { helmetConfiguration } from './helmet-configuration.js';
@@ -27,6 +34,10 @@ const middlewares = (app) => {
 };
 
 const routes = (app) => {
+
+    // 🔥 Swagger Documentation
+    app.use('/api-docs', serve, setup(swaggerSpec));
+
     // ACCOUNTS
     app.use(`${BASE_PATH}/accounts`, accountRoutes);
 
@@ -65,18 +76,20 @@ export const initServer = async () => {
 
     try {
         await dbConnection();
+
         middlewares(app);
         routes(app);
 
         app.use(errorHandler);
 
         app.listen(PORT, () => {
-            console.log(`Bank System server running on port ${PORT}`);
-            console.log(`Health check: http://localhost:${PORT}${BASE_PATH}/health`);
+            console.log(`🚀 Bank System server running on port ${PORT}`);
+            console.log(`📄 Swagger docs: http://localhost:${PORT}/api-docs`);
+            console.log(`❤️ Health check: http://localhost:${PORT}${BASE_PATH}/health`);
         });
 
     } catch (error) {
-        console.error(`Error starting Bank Server: ${error.message}`);
+        console.error(`❌ Error starting Bank Server: ${error.message}`);
         process.exit(1);
     }
 };
