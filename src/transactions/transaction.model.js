@@ -17,6 +17,11 @@ const transactionSchema = mongoose.Schema(
             required: [true, 'Amount is required'],
             min: [0.01, 'Amount must be greater than 0']
         },
+        status: {
+            type: String,
+            enum: ['PENDING', 'COMPLETED'],
+            default: 'PENDING'
+        },
         sourceAccount: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Account',
