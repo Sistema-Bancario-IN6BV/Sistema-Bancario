@@ -1,6 +1,7 @@
 'use strict';
 import { convertCurrency } from "./currency.service.js";
 import Account from './accounts.model.js';
+import Transaction from '../transactions/transaction.model.js';
 export const convertBalance = async (req, res) => {
     try {
         const { id } = req.params;
@@ -204,6 +205,72 @@ export const getMyAccounts = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Error al obtener las cuentas',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Get specific account with balance and last 5 movements
+ * Admin only endpoint
+ */
+export const getAccountWithMovements = async (req, res) => {
+    try {
+        // Only admins can access this endpoint
+        if (req.user.role !== 'ADMIN_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only admin can view account details'
+            });
+        }
+
+        const { id } = req.params;
+
+        // Get the account
+        const account = await Account.findById(id);
+
+        if (!account || !account.isActive) {
+            return res.status(404).json({
+                success: false,
+                message: 'Account not found'
+            });
+        }
+
+        // Get last 5 transactions for this account
+        const lastMovements = await Transaction.find({
+            $or: [
+                { sourceAccount: account._id },
+                { destinationAccount: account._id }
+            ],
+            isActive: true
+        })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean();
+
+        return res.json({
+            success: true,
+            message: 'Account details with last 5 movements',
+            account: {
+                accountId: account._id,
+                accountNumber: account.accountNumber,
+                balance: account.balance,
+                status: account.status,
+                userId: account.externalUserId,
+                lastMovements: lastMovements.map(movement => ({
+                    _id: movement._id,
+                    type: movement.type,
+                    amount: movement.amount,
+                    description: movement.description,
+                    createdAt: movement.createdAt
+                }))
+            }
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching account details',
             error: error.message
         });
     }
