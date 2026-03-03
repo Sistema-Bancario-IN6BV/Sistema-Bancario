@@ -152,7 +152,7 @@ export const createTransaction = async (req, res) => {
 
 export const updateTransaction = async (req, res) => {
     try {
-        if (req.user.role !== 'ADMIN_ROLE') {
+        if (req.user.role !== 'USER_ROLE') {
             return res.status(403).json({
                 success: false,
                 message: 'Only admin can update transactions'
