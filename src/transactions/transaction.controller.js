@@ -383,3 +383,115 @@ export const revertTransaction = async (req, res) => {
         });
     }
 };
+
+/**
+ * Get accounts with most movements (TRANSFER, PURCHASE, CREDIT)
+ * Ordered by movement count in ascending or descending order
+ */
+export const getAccountsWithMostMovements = async (req, res) => {
+    try {
+        // Only admins can access this endpoint
+        if (req.user.role !== 'ADMIN_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only admin can view accounts with most movements'
+            });
+        }
+
+        // Get sort parameter (asc or desc), default to descending
+        const { sort } = req.query;
+        const sortOrder = sort === 'asc' ? 1 : -1;
+
+        // Transaction types to include
+        const movementTypes = ['TRANSFER', 'PURCHASE', 'CREDIT'];
+
+        // Aggregate to count movements per account
+        // We count both sourceAccount and destinationAccount movements
+        const accountMovements = await Transaction.aggregate([
+            {
+                $match: {
+                    type: { $in: movementTypes },
+                    isActive: true
+                }
+            },
+            {
+                $facet: {
+                    asSource: [
+                        {
+                            $group: {
+                                _id: '$sourceAccount',
+                                movementCount: { $sum: 1 }
+                            }
+                        }
+                    ],
+                    asDestination: [
+                        {
+                            $group: {
+                                _id: '$destinationAccount',
+                                movementCount: { $sum: 1 }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    combined: {
+                        $concatArrays: ['$asSource', '$asDestination']
+                    }
+                }
+            },
+            {
+                $unwind: '$combined'
+            },
+            {
+                $group: {
+                    _id: '$combined._id',
+                    totalMovements: { $sum: '$combined.movementCount' }
+                }
+            },
+            {
+                $sort: { totalMovements: sortOrder }
+            }
+        ]);
+
+        // Filter out null accounts and get account details
+        const accountIds = accountMovements
+            .filter(item => item._id !== null)
+            .map(item => item._id);
+
+        // Get account details from database
+        const accounts = await Account.find({ 
+            _id: { $in: accountIds },
+            isActive: true 
+        });
+
+        // Create a map of account details
+        const accountMap = {};
+        accounts.forEach(account => {
+            accountMap[account._id.toString()] = account;
+        });
+
+        // Combine movement counts with account details
+        const result = accountMovements
+            .filter(item => item._id !== null && accountMap[item._id.toString()])
+            .map(item => ({
+                account: accountMap[item._id.toString()],
+                movementCount: item.totalMovements
+            }));
+
+        return res.json({
+            success: true,
+            message: `Accounts ordered by movements (${sort === 'asc' ? 'ascending' : 'descending'})`,
+            sortOrder: sort === 'asc' ? 'ascending' : 'descending',
+            data: result
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching accounts with most movements',
+            error: error.message
+        });
+    }
+};
