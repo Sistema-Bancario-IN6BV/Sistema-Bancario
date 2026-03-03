@@ -42,10 +42,6 @@ export const convertBalance = async (req, res) => {
     }
 };
 
-
-const generateAccountNumber = () => {
-    const entityCode = '1008'; 
-    const randomNumber = Math.floor(Math.random() * 9000000000) + 1000000000; 
 // Función para generar número de cuenta automáticamente
 const generateAccountNumber = () => {
     const entityCode = '1008'; 
