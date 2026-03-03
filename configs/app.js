@@ -13,7 +13,7 @@ import { errorHandler } from '../middlewares/handle-errors.js';
 import accountRoutes from '../src/accounts/accounts.router.js';
 import favoriteRoutes from '../src/favorite/favorite.router.js';
 import productRoutes from '../src/products/products.router.js';
-
+import transactionRoutes from '../src/transactions/transactions.router.js';
 const BASE_PATH = '/bankSystem/v1';
 
 const middlewares = (app) => {

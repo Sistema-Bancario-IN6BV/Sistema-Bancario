@@ -42,13 +42,32 @@ export const convertBalance = async (req, res) => {
     }
 };
 
+
+const generateAccountNumber = () => {
+    const entityCode = '1008'; 
+    const randomNumber = Math.floor(Math.random() * 9000000000) + 1000000000; 
+    return `${entityCode}${randomNumber}`;
+};
+
 export const createAccount = async (req, res) => {
     try {
 
+        if (req.user.role != 'ADMIN_ROLE'){
+            return res.status(403).json({
+                success: false,
+                message: 'Only admins can create accounts'
+            });
+
+        };
+
         const data = req.body;
+
+        // Generar número de cuenta automáticamente si no se proporciona
+        const accountNumber = data.accountNumber || generateAccountNumber();
 
         const account = new Account({
             ...data,
+            accountNumber,
             status: 'ACTIVE',
             externalUserId: req.user.id 
         });
@@ -72,6 +91,7 @@ export const createAccount = async (req, res) => {
 
 export const updateAccount = async (req, res) => {
     try {
+
         const { id } = req.params;
         const data = req.body;
 
@@ -114,6 +134,15 @@ export const updateAccount = async (req, res) => {
 
 export const deleteAccount = async (req, res) => {
     try {
+
+        if (req.user.role != 'ADMIN_ROLE'){
+            return res.status(403).json({
+                success: false,
+                message: 'Only admins can delete accounts'
+            });
+
+        };
+
         const { id } = req.params;
 
         const account = await Account.findById(id);
@@ -153,6 +182,15 @@ export const deleteAccount = async (req, res) => {
 
 export const getMyAccounts = async (req, res) => {
     try {
+
+        if (req.user.role != 'ADMIN_ROLE'){
+            return res.status(403).json({
+                success: false,
+                message: 'Only admins can see accounts'
+            });
+
+        };
+
         const accounts = await Account.find({ 
             externalUserId: req.user.id, 
             isActive: true 
