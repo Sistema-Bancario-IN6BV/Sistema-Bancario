@@ -1,32 +1,128 @@
-import { Router } from 'express';
-import {createTransaction, createTransaction, getTransactionById, getTransactions, getTransactions, updateTransaction, reverseTransaction } from './transaction.controller.js';
-import {validateCreateTransaction, validateUpdateTransactionRequest, validateTransactionStatusChange, validateGetTransactionById, validateUpdateTransactionRequest, validateCreateTransaction, validateReverseTransaction } from '../../middlewares/transaction-validators.js';
+import { Router } from "express";
+import { 
+    createTransaction,
+    updateTransaction,
+    getAllTransactions,
+    revertTransaction
+} from "./transaction.controller.js";
 
-const router = Router();
+import { validateJWT } from "../../middlewares/validate-JWT.js";
 
-router.post(
-    '/create',
-    validateCreateTransaction,
-    createTransaction
-)
+const api = Router();
 
-router.get(
-    '/get',
-    getTransactions
-)
+/**
+ * @swagger
+ * /transactions/create:
+ *   post:
+ *     summary: Crea una transacción (TRANSFER, DEPOSIT o CREDIT)
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [type, amount]
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [TRANSFER, DEPOSIT, CREDIT]
+ *               amount:
+ *                 type: number
+ *                 example: 500
+ *               sourceAccount:
+ *                 type: string
+ *               destinationAccount:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Transacción creada
+ *       400:
+ *         description: Validación de negocio fallida
+ *       403:
+ *         description: Operación no autorizada
+ */
+api.post('/create', validateJWT, createTransaction);
 
-router.get('/:id', validateGetTransactionById, getTransactionById);
+/**
+ * @swagger
+ * /transactions/update/{id}:
+ *   put:
+ *     summary: Actualiza el monto de una transacción
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [amount]
+ *             properties:
+ *               amount:
+ *                 type: number
+ *                 example: 750
+ *     responses:
+ *       200:
+ *         description: Transacción actualizada
+ *       400:
+ *         description: No se puede actualizar
+ *       403:
+ *         description: Solo administradores
+ *       404:
+ *         description: Transacción no encontrada
+ */
+api.put('/update/:id', validateJWT, updateTransaction);
 
-router.put(
-    '/:id',
-    validateUpdateTransactionRequest,
-    updateTransaction   
+/**
+ * @swagger
+ * /transactions/get:
+ *   get:
+ *     summary: Obtiene todas las transacciones activas
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Transacciones obtenidas
+ *       403:
+ *         description: Solo administradores
+ */
+api.get('/get', validateJWT, getAllTransactions);
 
-);
-router.put('/:id/activate', validateTransactionStatusChange, changeTransactionStatus);
-router.put('/:id/desactivate', validateTransactionStatusChange, changeTransactionStatus);
+/**
+ * @swagger
+ * /transactions/revert/{id}:
+ *   put:
+ *     summary: Revierte una transacción dentro del tiempo permitido
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Transacción revertida
+ *       400:
+ *         description: No se puede revertir
+ *       404:
+ *         description: Transacción no encontrada
+ */
+api.put('/revert/:id', validateJWT, revertTransaction);
 
-// Ruta para revertir un depósito
-router.post('/:id/reverse', validateReverseTransaction, reverseTransaction);
-
-export default router;
+export default api;
