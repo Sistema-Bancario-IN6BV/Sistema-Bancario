@@ -46,6 +46,10 @@ export const convertBalance = async (req, res) => {
 const generateAccountNumber = () => {
     const entityCode = '1008'; 
     const randomNumber = Math.floor(Math.random() * 9000000000) + 1000000000; 
+// Función para generar número de cuenta automáticamente
+const generateAccountNumber = () => {
+    const entityCode = '1008'; 
+    const randomNumber = Math.floor(Math.random() * 9000000000) + 1000000000; // 10 dígitos aleatorios
     return `${entityCode}${randomNumber}`;
 };
 
@@ -204,6 +208,52 @@ export const getMyAccounts = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Error al obtener las cuentas',
+            error: error.message
+        });
+    }
+};
+
+export const changeAccountStatus = async (req, res) => {
+    try {
+        const { id, status } = req.params;
+
+        const allStatus = ['ACTIVE', 'BLOCKED', 'CLOSED'];
+
+        if (!allStatus.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status value'
+            });
+        }
+
+        const updateData = {
+            status,
+            isActive: status === 'ACTIVE'
+        };
+
+        const account = await Account.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true }
+        );
+
+        if (!account) {
+            return res.status(404).json({
+                success: false,
+                message: 'Account not found'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Account updated to status ${status}`,
+            data: account
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error updating account status',
             error: error.message
         });
     }
