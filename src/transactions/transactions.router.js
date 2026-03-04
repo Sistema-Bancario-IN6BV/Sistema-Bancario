@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createTransaction, updateTransaction, getAllTransactions, revertTransaction, changeTransactionStatus } from "./transaction.controller.js";
+import { createTransaction, updateTransaction, getAllTransactions, revertTransaction, changeTransactionStatus, getAccountsWithMostMovements } from "./transaction.controller.js";
 import { validateTransactionStatusChange } from "../../middlewares/transaction-validators.js";
 import { validateJWT } from "../../middlewares/validate-JWT.js";
 
@@ -121,5 +121,6 @@ api.get('/get', validateJWT, getAllTransactions);
 api.put('/revert/:id', validateJWT, revertTransaction);
 api.put('/activate/:id', validateTransactionStatusChange, changeTransactionStatus);
 api.put('/deactivate/:id', validateTransactionStatusChange, changeTransactionStatus);
+api.get('/accounts-with-most-movements', validateJWT, getAccountsWithMostMovements);
 
 export default api;

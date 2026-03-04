@@ -164,7 +164,7 @@ export const purchaseProduct = async (req, res) => {
 
         const { productId, accountId } = req.body;
 
-        if (req.user.role !== 'USER_ROLE') {
+        if (req.user.role !== 'ADMIN_ROLE' && req.user.role !== 'USER_ROLE') {
             return res.status(403).json({
                 success: false,
                 message: 'Only clients can purchase products'
@@ -256,3 +256,44 @@ export const changeProductStatus = async (req, res) => {
         
     }
 }
+
+export const getPurchasedProductsByAccount = async (req, res) => {
+    try {
+
+        const { id } = req.params;
+
+        if (req.user.role !== 'ADMIN_ROLE' && req.user.role !== 'USER_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized'
+            });
+        }
+
+        const account = await Account.findById(id);
+
+        if (!account) {
+            return res.status(404).json({
+                success: false,
+                message: 'Account not found'
+            });
+        }
+
+        const purchases = await Transaction.find({
+            type: 'PURCHASE',
+            sourceAccount: id
+        }).sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            total: purchases.length,
+            purchases
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error getting purchased products',
+            error: error.message
+        });
+    }
+};
