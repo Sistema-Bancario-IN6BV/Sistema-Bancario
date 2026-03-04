@@ -1,6 +1,9 @@
 'use strict';
 
-
+export const USER_ROLES = {
+    ADMIN: 'ADMIN_ROLE',
+    USER: 'USER_ROLE'
+};
 export const requireRole = (...allowedRoles) => {
     return (req, res, next) => {
         if (!req.user) {
