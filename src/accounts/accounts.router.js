@@ -1,11 +1,19 @@
 import { convertBalance } from "./accounts.controller.js";
 import { Router } from "express";
-import { createAccount, updateAccount, deleteAccount, getMyAccounts, changeAccountStatus, getAccountWithMovements } from "./accounts.controller.js";
+import { validateJWT } from "../../middlewares/validate-JWT.js";
+import { requireRole } from "../../middlewares/validate-role.js";
+import { USER_ROLES } from "../../middlewares/validate-role.js";
+import { createAccount, updateAccount, deleteAccount, getMyAccounts, changeAccountStatus, getAccountWithMovements, purchaseWithPoints } from "./accounts.controller.js";
 import { validateCreateAccount, validateGet, validateUpdateAccount } from "../../middlewares/account-validator.js";
 import { validateAccountStatusChange } from "../../middlewares/account-validators.js";
 
 const api = Router();
-
+api.post(
+    '/purchase-with-points',
+    validateJWT,
+    requireRole(USER_ROLES.USER),
+    purchaseWithPoints
+);
 /**
  * @swagger
  * /accounts/convert-balance/{id}:

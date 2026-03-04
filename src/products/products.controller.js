@@ -164,12 +164,6 @@ export const purchaseProduct = async (req, res) => {
 
         const { productId, accountId } = req.body;
 
-        if (req.user.role !== 'ADMIN_ROLE' && req.user.role !== 'USER_ROLE') {
-            return res.status(403).json({
-                success: false,
-                message: 'Only clients can purchase products'
-            });
-        }
 
         const product = await Product.findOne({_id: productId,isActive: true});
 
@@ -197,6 +191,8 @@ export const purchaseProduct = async (req, res) => {
         }
 
         account.balance -= product.price;
+        const earnedPoints = Math.floor(product.price / 10);
+        account.points += earnedPoints;
         await account.save();
 
         const transaction = await Transaction.create({
@@ -210,7 +206,9 @@ export const purchaseProduct = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Product purchased successfully',
-            product,
+            newBalance: account.balance,
+            newPoints: account.points,
+            earnedPoints,
             transaction
         });
 
