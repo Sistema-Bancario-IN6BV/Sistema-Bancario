@@ -22,8 +22,8 @@ export const createTransaction = async (req, res) => {
             });
         }
 
-        let source;
-        let destination;
+        let source = null;
+        let destination = null;
 
         if (sourceAccount) {
             source = await Account.findById(sourceAccount);
@@ -58,7 +58,7 @@ export const createTransaction = async (req, res) => {
             if (amount > 2000) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Cannot transfer more than 2000 per transaction'
+                    message: 'Cannot transfer more than Q2000 per transaction'
                 });
             }
 
@@ -95,32 +95,66 @@ export const createTransaction = async (req, res) => {
         }
 
         if (type === 'DEPOSIT') {
-            if (!destination) {
+            if (!source || !destination) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Deposit requires destination account'
+                    message: 'Deposit requires source and destination accounts'
                 });
             }
 
+            if (amount > 2000) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cannot deposit more than Q2000 per transaction'
+                });
+            }
+
+            if (source.balance < amount) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Insufficient funds'
+                });
+            }
+
+            const startOfDay = new Date();
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const todayDeposits = await Transaction.find({
+                type: 'DEPOSIT',
+                sourceAccount: sourceAccount,
+                createdAt: { $gte: startOfDay }
+            });
+
+            const totalToday = todayDeposits.reduce((sum, t) => sum + t.amount, 0);
+
+            if (totalToday + amount > 10000) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Daily deposit limit of Q10000 exceeded'
+                });
+            }
+
+            source.balance -= amount;
             destination.balance += amount;
+
+            await source.save();
             await destination.save();
         }
 
         if (type === 'CREDIT') {
-        
-        if (req.user.role !== 'ADMIN_ROLE') {
-            return res.status(403).json({
-                success: false,
-                message: 'Only admin can grant credits'
-            });
-        }
-        
-        if (!destination) {
-            return res.status(400).json({
-                success: false,
-                message: 'Credit requires destination account'
-            });
-        }
+            if (req.user.role !== 'ADMIN_ROLE') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Only admin can grant credits'
+                });
+            }
+
+            if (!destination) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Credit requires destination account'
+                });
+            }
 
             destination.balance += amount;
             await destination.save();
@@ -205,8 +239,6 @@ export const updateTransaction = async (req, res) => {
 
         if (transaction.type === 'DEPOSIT') {
 
-            transaction.sourceAccount.balance += difference;
-
             if (transaction.sourceAccount.balance < 0) {
                 return res.status(400).json({
                     success: false,
@@ -214,7 +246,11 @@ export const updateTransaction = async (req, res) => {
                 });
             }
 
+            transaction.sourceAccount.balance -= difference;
+            transaction.destinationAccount.balance += difference;
+
             await transaction.sourceAccount.save();
+            await transaction.destinationAccount.save();
         }
 
         if (transaction.type === 'TRANSFER') {
@@ -347,23 +383,27 @@ export const revertTransaction = async (req, res) => {
         }
 
         if (transaction.type === 'DEPOSIT') {
+            const source = await Account.findById(transaction.sourceAccount);
             const destination = await Account.findById(transaction.destinationAccount);
 
-            if (!destination) {
+            if (!source || !destination) {
                 return res.status(404).json({
                     success: false,
-                    message: 'Account not found'
+                    message: 'Accounts not found'
                 });
             }
 
             if (destination.balance < transaction.amount) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Not enough balance to revert deposit'
+                    message: 'Destination account does not have enough balance to revert'
                 });
             }
 
             destination.balance -= transaction.amount;
+            source.balance += transaction.amount;
+
+            await source.save();
             await destination.save();
         }
 
@@ -417,3 +457,102 @@ export const changeTransactionStatus = async (req, res) => {
         
     }
 }
+
+export const getAccountsWithMostMovements = async (req, res) => {
+    try {
+        if (req.user.role !== 'ADMIN_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only admin can view accounts with most movements'
+            });
+        }
+
+        const { sort } = req.query;
+        const sortOrder = sort === 'asc' ? 1 : -1;
+
+        const movementTypes = ['TRANSFER', 'PURCHASE', 'CREDIT'];
+
+        const accountMovements = await Transaction.aggregate([
+            {
+                $match: {
+                    type: { $in: movementTypes },
+                    isActive: true
+                }
+            },
+            {
+                $facet: {
+                    asSource: [
+                        {
+                            $group: {
+                                _id: '$sourceAccount',
+                                movementCount: { $sum: 1 }
+                            }
+                        }
+                    ],
+                    asDestination: [
+                        {
+                            $group: {
+                                _id: '$destinationAccount',
+                                movementCount: { $sum: 1 }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    combined: {
+                        $concatArrays: ['$asSource', '$asDestination']
+                    }
+                }
+            },
+            {
+                $unwind: '$combined'
+            },
+            {
+                $group: {
+                    _id: '$combined._id',
+                    totalMovements: { $sum: '$combined.movementCount' }
+                }
+            },
+            {
+                $sort: { totalMovements: sortOrder }
+            }
+        ]);
+
+        const accountIds = accountMovements
+            .filter(item => item._id !== null)
+            .map(item => item._id);
+
+        const accounts = await Account.find({ 
+            _id: { $in: accountIds },
+            isActive: true 
+        });
+
+        const accountMap = {};
+        accounts.forEach(account => {
+            accountMap[account._id.toString()] = account;
+        });
+
+        const result = accountMovements
+            .filter(item => item._id !== null && accountMap[item._id.toString()])
+            .map(item => ({
+                account: accountMap[item._id.toString()],
+                movementCount: item.totalMovements
+            }));
+
+        return res.json({
+            success: true,
+            message: `Accounts ordered by movements ${sort === 'asc' ? 'ascending' : 'descending'}`,
+            sortOrder: sort === 'asc' ? 'ascending' : 'descending',
+            data: result
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching accounts with most movements',
+            error: error.message
+        });
+    }
+};

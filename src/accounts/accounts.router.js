@@ -1,6 +1,6 @@
 import { convertBalance } from "./accounts.controller.js";
 import { Router } from "express";
-import { createAccount, updateAccount, deleteAccount, getMyAccounts, changeAccountStatus } from "./accounts.controller.js";
+import { createAccount, updateAccount, deleteAccount, getMyAccounts, changeAccountStatus, getAccountWithMovements } from "./accounts.controller.js";
 import { validateCreateAccount, validateGet, validateUpdateAccount } from "../../middlewares/account-validator.js";
 import { validateAccountStatusChange } from "../../middlewares/account-validators.js";
 
@@ -146,5 +146,6 @@ api.put('/update/:id', validateUpdateAccount, updateAccount);
  */
 api.delete('/delete/:id', validateUpdateAccount, deleteAccount);
 api.put('/:id/status/:status', validateAccountStatusChange, changeAccountStatus);
+api.get('/detail/:id', validateGet, getAccountWithMovements);
 
 export default api;

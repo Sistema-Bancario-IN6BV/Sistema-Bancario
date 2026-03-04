@@ -254,3 +254,62 @@ export const changeAccountStatus = async (req, res) => {
         });
     }
 };
+
+export const getAccountWithMovements = async (req, res) => {
+    try {
+        if (req.user.role !== 'ADMIN_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only admin can view account details'
+            });
+        }
+
+        const { id } = req.params;
+
+        const account = await Account.findById(id);
+
+        if (!account || !account.isActive) {
+            return res.status(404).json({
+                success: false,
+                message: 'Account not found'
+            });
+        }
+
+        const lastMovements = await Transaction.find({
+            $or: [
+                { sourceAccount: account._id },
+                { destinationAccount: account._id }
+            ],
+            isActive: true
+        })
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean();
+
+        return res.json({
+            success: true,
+            message: 'Account details with last 5 movements',
+            account: {
+                accountId: account._id,
+                accountNumber: account.accountNumber,
+                balance: account.balance,
+                status: account.status,
+                userId: account.externalUserId,
+                lastMovements: lastMovements.map(movement => ({
+                    _id: movement._id,
+                    type: movement.type,
+                    amount: movement.amount,
+                    description: movement.description,
+                    createdAt: movement.createdAt
+                }))
+            }
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error fetching account details',
+            error: error.message
+        });
+    }
+};
