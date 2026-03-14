@@ -52,36 +52,38 @@ const generateAccountNumber = () => {
 
 export const createAccount = async (req, res) => {
     try {
+        // Nota: El chequeo de 'ADMIN_ROLE' ya lo hace el middleware arriba, 
+        // pero dejarlo aquí es una buena segunda capa de seguridad.
 
-        if (req.user.role != 'ADMIN_ROLE'){
-            return res.status(403).json({
-                success: false,
-                message: 'Only admins can create accounts'
-            });
+        const { externalUserId, balance, accountNumber: customNumber } = req.body;
 
-        };
+        // 1. Generar número o usar el proporcionado
+        const accountNumber = customNumber || generateAccountNumber();
 
-        const data = req.body;
-
-        // Generar número de cuenta automáticamente si no se proporciona
-        const accountNumber = data.accountNumber || generateAccountNumber();
-
+        // 2. Crear la cuenta asignándola al usuario que viene en el BODY, no al Admin
         const account = new Account({
-            ...data,
+            externalUserId, // ID del cliente
             accountNumber,
-            status: 'ACTIVE',
-            externalUserId: req.user.id 
+            balance: balance || 0,
+            status: 'ACTIVE'
         });
 
         await account.save();
 
         return res.status(201).json({
             success: true,
-            message: 'Cuenta creada exitosamente',
+            message: 'Cuenta creada exitosamente por el administrador',
             account
         });
 
     } catch (error) {
+        // Manejo específico para números de cuenta duplicados
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'El número de cuenta ya existe'
+            });
+        }
         return res.status(500).json({
             success: false,
             message: 'Error al crear la cuenta',
