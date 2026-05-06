@@ -164,12 +164,6 @@ export const purchaseProduct = async (req, res) => {
 
         const { productId, accountId } = req.body;
 
-        if (req.user.role !== 'USER_ROLE') {
-            return res.status(403).json({
-                success: false,
-                message: 'Only clients can purchase products'
-            });
-        }
 
         const product = await Product.findOne({_id: productId,isActive: true});
 
@@ -197,6 +191,8 @@ export const purchaseProduct = async (req, res) => {
         }
 
         account.balance -= product.price;
+        const earnedPoints = Math.floor(product.price / 10);
+        account.points += earnedPoints;
         await account.save();
 
         const transaction = await Transaction.create({
@@ -210,7 +206,9 @@ export const purchaseProduct = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: 'Product purchased successfully',
-            product,
+            newBalance: account.balance,
+            newPoints: account.points,
+            earnedPoints,
             transaction
         });
 
@@ -218,6 +216,81 @@ export const purchaseProduct = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Error purchasing product',
+            error: error.message
+        });
+    }
+};
+
+export const changeProductStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const isActive = req.url.includes('/activate');
+        const action = isActive ? 'activado' : 'desactivado';
+
+        const product = await Product.findByIdAndUpdate(
+            id, 
+            { isActive },
+            { new: true}
+        );
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: `Producto no encontrado`,
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Producto ${action} exitosamente`,
+            data: product
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error al cambiar el estado del producto',
+            error: error.message,
+        });
+        
+    }
+}
+
+export const getPurchasedProductsByAccount = async (req, res) => {
+    try {
+
+        const { id } = req.params;
+
+        if (req.user.role !== 'ADMIN_ROLE' && req.user.role !== 'USER_ROLE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized'
+            });
+        }
+
+        const account = await Account.findById(id);
+
+        if (!account) {
+            return res.status(404).json({
+                success: false,
+                message: 'Account not found'
+            });
+        }
+
+        const purchases = await Transaction.find({
+            type: 'PURCHASE',
+            sourceAccount: id
+        }).sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            total: purchases.length,
+            purchases
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error getting purchased products',
             error: error.message
         });
     }

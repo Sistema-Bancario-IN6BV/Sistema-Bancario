@@ -8,7 +8,7 @@ const transactionSchema = mongoose.Schema(
             type: String,
             required: [true, 'Transaction type is required'],
             enum: {
-                values: ['TRANSFER', 'DEPOSIT', 'PURCHASE', 'CREDIT', 'REVERSAL'],
+                values: ['TRANSFER', 'DEPOSIT', 'PURCHASE', 'CREDIT', 'REVERSAL','POINT_PURCHASE' ],
                 message: 'Invalid transaction type'
             }
         },

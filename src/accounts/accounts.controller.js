@@ -1,7 +1,69 @@
 'use strict';
 import { convertCurrency } from "./currency.service.js";
 import Account from './accounts.model.js';
+import Product from '../products/products.model.js';
 import Transaction from '../transactions/transaction.model.js';
+export const purchaseWithPoints = async (req, res) => {
+    try {
+        const { accountId, productId } = req.body;
+
+        // Buscar cuenta
+        const account = await Account.findById(accountId);
+        if (!account) {
+            return res.status(404).json({ message: "Account not found" });
+        }
+
+        if (!account.isActive || account.status !== "ACTIVE") {
+            return res.status(400).json({ message: "Account is not active" });
+        }
+
+
+        // Buscar producto
+        const product = await Product.findById(productId);
+        if (!product || !product.isActive) {
+            return res.status(404).json({
+                message: "Product not found or inactive"
+            });
+        }
+
+        const price = product.price;
+
+        // Verificar puntos suficientes
+        if (account.points < price) {
+            return res.status(400).json({
+                message: "Not enough points"
+            });
+        }
+
+        // Restar puntos
+        account.points -= price;
+        await account.save();
+
+        // Crear transacción
+        const transaction = await Transaction.create({
+            type: "POINT_PURCHASE",
+            amount: price,
+            sourceAccount: account._id,
+            description: `Purchase with points: ${product.name}`,
+            product: product._id,
+            isReversible: false,
+            isReversed: false,
+            isActive: true
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Product purchased successfully with points",
+            product: product.name,
+            remainingPoints: account.points,
+            transaction
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
 export const convertBalance = async (req, res) => {
     try {
         const { id } = req.params;
@@ -22,8 +84,14 @@ export const convertBalance = async (req, res) => {
             return res.status(404).json({ success: false, message: "Cuenta no encontrada" });
         }
 
-        if (account.externalUserId !== req.user.id) {
-            return res.status(403).json({ success: false, message: "No tienes permiso sobre esta cuenta" });
+        if (
+            req.user.role !== 'ADMIN_ROLE' &&
+            account.externalUserId !== req.user.id
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "No tienes permiso sobre esta cuenta"
+            });
         }
 
         const converted = await convertCurrency(account.balance, "GTQ", to);
@@ -212,13 +280,54 @@ export const getMyAccounts = async (req, res) => {
     }
 };
 
-/**
- * Get specific account with balance and last 5 movements
- * Admin only endpoint
- */
+export const changeAccountStatus = async (req, res) => {
+    try {
+        const { id, status } = req.params;
+
+        const allStatus = ['ACTIVE', 'BLOCKED', 'CLOSED'];
+
+        if (!allStatus.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status value'
+            });
+        }
+
+        const updateData = {
+            status,
+            isActive: status === 'ACTIVE'
+        };
+
+        const account = await Account.findByIdAndUpdate(
+            id,
+            updateData,
+            { new: true }
+        );
+
+        if (!account) {
+            return res.status(404).json({
+                success: false,
+                message: 'Account not found'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Account updated to status ${status}`,
+            data: account
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error updating account status',
+            error: error.message
+        });
+    }
+};
+
 export const getAccountWithMovements = async (req, res) => {
     try {
-        // Only admins can access this endpoint
         if (req.user.role !== 'ADMIN_ROLE') {
             return res.status(403).json({
                 success: false,
@@ -228,7 +337,6 @@ export const getAccountWithMovements = async (req, res) => {
 
         const { id } = req.params;
 
-        // Get the account
         const account = await Account.findById(id);
 
         if (!account || !account.isActive) {
@@ -238,7 +346,6 @@ export const getAccountWithMovements = async (req, res) => {
             });
         }
 
-        // Get last 5 transactions for this account
         const lastMovements = await Transaction.find({
             $or: [
                 { sourceAccount: account._id },
