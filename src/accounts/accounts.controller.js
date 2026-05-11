@@ -254,18 +254,17 @@ export const deleteAccount = async (req, res) => {
 export const getMyAccounts = async (req, res) => {
     try {
 
-        if (req.user.role != 'ADMIN_ROLE'){
-            return res.status(403).json({
-                success: false,
-                message: 'Only admins can see accounts'
+        let accounts;
+
+        if (req.user.role === 'ADMIN_ROLE') {
+            accounts = await Account.find({ isActive: true });
+
+        } else {
+            accounts = await Account.find({
+                externalUserId: req.user.id,
+                isActive: true
             });
-
-        };
-
-        const accounts = await Account.find({ 
-            externalUserId: req.user.id, 
-            isActive: true 
-        });
+        }
 
         return res.json({
             success: true,

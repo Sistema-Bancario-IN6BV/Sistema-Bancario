@@ -2,6 +2,7 @@
 
 import Favorite from './favorite.model.js';
 import Account from '../accounts/accounts.model.js';
+import Transaction from '../transactions/transaction.model.js';
 
 export const addFavorite = async (req, res) => {
     try {
@@ -167,5 +168,73 @@ export const changeFavoriteStatus = async (req, res) => {
             error: error.message,
         });
         
+    }
+}
+
+export const fastTransfer = async (req, res) => {
+    try {
+        const { favoriteId, sourceAccount, amount } = req.body;
+
+        const favorite = await Favorite.findById(favoriteId);
+
+        if (!favorite){
+            return res.status(404).json({
+                success: false,
+                message: 'Favorito no encontrado',
+            });
+        }
+
+        const source = await Account.findById(sourceAccount);
+        const destination = await Account.findById(favorite.accountId);
+
+        if (!source){
+            return res.status(404).json({
+                success: false,
+                message: 'Cuenta de origen no encontrada',
+            });
+        }
+
+        if (!destination){
+            return res.status(404).json({
+                success: false,
+                message: 'Cuenta de destino no encontrada',
+            });
+        }
+
+        if (source.balance < amount){
+            return res.status(404).json({
+                success: false,
+                message: 'Saldo insuficiente en la cuenta de origen',
+            });
+        }
+
+        source.balance -= amount;
+        destination.balance += amount;
+
+        await source.save();
+        await destination.save();
+
+        const transaction = await Transaction.create({
+            type: 'TRANSFER',
+            amount,
+            sourceAccount,
+            destinationAccount: destination._id,
+            description: `Transferencia rápida a ${destination.accountNumber}`,
+            isReversible: true
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Transferencia rápida realizada exitosamente',
+            transaction
+        });
+
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error al realizar la transferencia rápida',
+            error: error.message,
+        });
     }
 }
