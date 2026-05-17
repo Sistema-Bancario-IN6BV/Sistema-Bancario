@@ -21,6 +21,11 @@ const accountSchema = mongoose.Schema(
             min: [0, 'Balance cannot be negative'],
             default: 0
         },
+        points: {
+            type: Number,
+            default: 0,
+            min: [0, 'Points cannot be negative']
+        },
         status: {
             type: String,
             required: true,
@@ -29,12 +34,19 @@ const accountSchema = mongoose.Schema(
                 message: 'Invalid account status'
             },
             default: 'ACTIVE'
-        }
+        },
+        isActive: {
+            type: Boolean,
+            default: true
+        }        
     },
     {
         timestamps: true,
         versionKey: false
     }
 );
+
+accountSchema.index({ externalUserId: 1 });
+accountSchema.index({ isActive: 1, status: 1 });
 
 export default mongoose.model('Account', accountSchema);
