@@ -107,3 +107,12 @@ export const validateGetTransactionsByAccount = [
 
     checkValidators,
 ];
+
+export const validateTransactionStatusChange = [
+    validateJWT,
+    requireRole('ADMIN_ROLE'),
+    param('id')
+        .isMongoId()
+        .withMessage('Transaction ID must be a valid MongoDB ObjectId'),
+    checkValidators,
+];
