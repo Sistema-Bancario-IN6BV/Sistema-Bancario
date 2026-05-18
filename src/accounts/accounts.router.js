@@ -3,11 +3,18 @@ import { Router } from "express";
 import { validateJWT } from "../../middlewares/validate-JWT.js";
 import { requireRole } from "../../middlewares/validate-role.js";
 import { USER_ROLES } from "../../middlewares/validate-role.js";
-import { createAccount, updateAccount, deleteAccount, getMyAccounts, changeAccountStatus, getAccountWithMovements, purchaseWithPoints } from "./accounts.controller.js";
+import { createAccount, updateAccount, deleteAccount, getMyAccounts, changeAccountStatus, getAccountWithMovements, purchaseWithPoints, requestAccount, getMyAccountRequests, getMyAccountSummary, getPendingAccountRequests, approveAccountRequest, rejectAccountRequest } from "./accounts.controller.js";
 import { validateCreateAccount, validateGet, validateUpdateAccount } from "../../middlewares/account-validator.js";
 import { validateAccountStatusChange } from "../../middlewares/account-validators.js";
 
 const api = Router();
+api.post('/requests', validateJWT, requireRole(USER_ROLES.USER), requestAccount);
+api.get('/requests/me', validateJWT, requireRole(USER_ROLES.USER), getMyAccountRequests);
+api.get('/me/summary', validateJWT, requireRole(USER_ROLES.USER), getMyAccountSummary);
+api.get('/requests', validateJWT, requireRole(USER_ROLES.ADMIN), getPendingAccountRequests);
+api.post('/requests/:id/approve', validateJWT, requireRole(USER_ROLES.ADMIN), approveAccountRequest);
+api.post('/requests/:id/reject', validateJWT, requireRole(USER_ROLES.ADMIN), rejectAccountRequest);
+
 api.post(
     '/purchase-with-points',
     validateJWT,
