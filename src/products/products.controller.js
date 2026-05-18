@@ -36,7 +36,8 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find({ isActive: true });
+        // Traer todos los productos (activos e inactivos) para administradores
+        const products = await Product.find();
 
         return res.json({
             success: true,

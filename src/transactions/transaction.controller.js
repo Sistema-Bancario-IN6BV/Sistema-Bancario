@@ -1,12 +1,14 @@
 'use strict';
 
+import crypto from 'crypto';
 import Transaction from './transaction.model.js';
 import Account from '../accounts/accounts.model.js';
+import Favorite from '../favorite/favorite.model.js';
 
 export const createTransaction = async (req, res) => {
     try {
 
-        const { type, amount, sourceAccount, destinationAccount, description } = req.body;
+        const { type, amount, sourceAccount, destinationAccount, favoriteId, description } = req.body;
 
         if (!type || !amount) {
             return res.status(400).json({
@@ -37,12 +39,32 @@ export const createTransaction = async (req, res) => {
         }
 
         if (destinationAccount) {
+            // try by id first, then fall back to accountNumber lookup
             destination = await Account.findById(destinationAccount);
+            if (!destination) {
+                destination = await Account.findOne({ accountNumber: String(destinationAccount) });
+            }
 
             if (!destination || !destination.isActive || destination.status !== 'ACTIVE') {
                 return res.status(404).json({
                     success: false,
                     message: 'Destination account not found or inactive'
+                });
+            }
+        }
+
+        // If a favorite is provided instead of a raw destination account, resolve it
+        if (!destination && favoriteId) {
+            const fav = await Favorite.findById(favoriteId);
+            if (!fav || !fav.isActive) {
+                return res.status(404).json({ success: false, message: 'Favorite not found or inactive' });
+            }
+            destination = await Account.findById(fav.accountId);
+
+            if (!destination || !destination.isActive || destination.status !== 'ACTIVE') {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Destination account from favorite not found or inactive'
                 });
             }
         }
@@ -160,14 +182,18 @@ export const createTransaction = async (req, res) => {
             await destination.save();
         }
 
-        const transaction = await Transaction.create({
+        const transactionPayload = {
             type,
             amount,
             sourceAccount,
-            destinationAccount,
+            destinationAccount: destination ? destination._id : destinationAccount,
             description,
-            isReversible: type === 'TRANSFER'
-        });
+            favorite: favoriteId || undefined,
+            isReversible: type === 'TRANSFER',
+            initiatedBy: req.user ? String(req.user.id) : undefined
+        };
+
+        const transaction = await Transaction.create(transactionPayload);
 
         return res.status(201).json({
             success: true,
@@ -310,7 +336,34 @@ export const getAllTransactions = async (req, res) => {
 
         const transactions = await Transaction.find({ isActive: true })
             .populate('sourceAccount')
-            .populate('destinationAccount');
+            .populate('destinationAccount')
+            .sort({ createdAt: -1 });
+
+        // Prepare caching headers: short TTL + conditional responses via ETag / Last-Modified
+        const payload = JSON.stringify(transactions.map(t => ({
+            id: t._id,
+            createdAt: t.createdAt,
+            updatedAt: t.updatedAt || t.createdAt
+        })));
+        const etag = crypto.createHash('md5').update(payload).digest('hex');
+
+        // Last-Modified: latest updatedAt or createdAt
+        const lastModifiedDate = transactions.length > 0
+            ? new Date(Math.max(...transactions.map(t => new Date(t.updatedAt || t.createdAt).getTime())))
+            : new Date();
+
+        res.set('ETag', etag);
+        res.set('Last-Modified', lastModifiedDate.toUTCString());
+        // short TTL: 5 seconds (adjustable)
+        res.set('Cache-Control', 'public, max-age=5, must-revalidate');
+
+        // Handle conditional requests
+        const ifNoneMatch = req.headers['if-none-match'];
+        const ifModifiedSince = req.headers['if-modified-since'];
+
+        if ((ifNoneMatch && ifNoneMatch === etag) || (ifModifiedSince && new Date(ifModifiedSince) >= lastModifiedDate)) {
+            return res.status(304).end();
+        }
 
         return res.json({
             success: true,
@@ -554,5 +607,57 @@ export const getAccountsWithMostMovements = async (req, res) => {
             message: 'Error fetching accounts with most movements',
             error: error.message
         });
+    }
+};
+
+export const getMyTransactions = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit, 10) || 5;
+
+        // find accounts that belong to the authenticated user
+        const accounts = await Account.find({ externalUserId: String(req.user.id), isActive: true });
+        const accountIds = accounts.map(a => a._id);
+
+        if (accountIds.length === 0) {
+            return res.json({ success: true, transactions: [] });
+        }
+
+        const transactions = await Transaction.find({
+            isActive: true,
+            $or: [
+                { sourceAccount: { $in: accountIds } },
+                { destinationAccount: { $in: accountIds } }
+            ]
+        })
+        .populate('sourceAccount')
+        .populate('destinationAccount')
+        .sort({ createdAt: -1 })
+        .limit(limit);
+
+        // Caching: short TTL + ETag/Last-Modified for conditional GETs
+        const payload = JSON.stringify(transactions.map(t => ({
+            id: t._id,
+            createdAt: t.createdAt,
+            updatedAt: t.updatedAt || t.createdAt
+        })));
+        const etag = crypto.createHash('md5').update(payload).digest('hex');
+        const lastModifiedDate = transactions.length > 0
+            ? new Date(Math.max(...transactions.map(t => new Date(t.updatedAt || t.createdAt).getTime())))
+            : new Date();
+
+        res.set('ETag', etag);
+        res.set('Last-Modified', lastModifiedDate.toUTCString());
+        res.set('Cache-Control', 'public, max-age=5, must-revalidate');
+
+        const ifNoneMatch = req.headers['if-none-match'];
+        const ifModifiedSince = req.headers['if-modified-since'];
+
+        if ((ifNoneMatch && ifNoneMatch === etag) || (ifModifiedSince && new Date(ifModifiedSince) >= lastModifiedDate)) {
+            return res.status(304).end();
+        }
+
+        return res.json({ success: true, transactions });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error fetching user transactions', error: error.message });
     }
 };
