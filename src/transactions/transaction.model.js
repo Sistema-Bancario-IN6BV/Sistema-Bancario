@@ -27,6 +27,29 @@ const transactionSchema = mongoose.Schema(
             ref: 'Account',
             required: false
         },
+        favorite: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Favorite',
+            required: false
+        },
+        initiatedBy: {
+            type: String,
+            required: false,
+            trim: true
+        },
+        status: {
+            type: String,
+            enum: ['PENDING', 'COMPLETED', 'FAILED'],
+            default: 'COMPLETED'
+        },
+        currency: {
+            type: String,
+            default: 'GTQ'
+        },
+        reference: {
+            type: String,
+            required: false
+        },
         description: {
             type: String,
             trim: true,
@@ -55,6 +78,6 @@ transactionSchema.index({ sourceAccount: 1 });
 transactionSchema.index({ destinationAccount: 1 });
 transactionSchema.index({ type: 1 });
 transactionSchema.index({ createdAt: 1 });
-transactionSchema.index({ isActive: 1, transactionType: 1});
+transactionSchema.index({ isActive: 1, type: 1});
 
 export default mongoose.model('Transaction', transactionSchema);
