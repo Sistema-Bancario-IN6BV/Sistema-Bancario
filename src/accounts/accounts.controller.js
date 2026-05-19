@@ -78,6 +78,47 @@ export const createAccount = async (req, res) => {
     }
 };
 
+export const getAccountByNumber = async (req, res) => {
+    try {
+        const { accountNumber } = req.params;
+
+        if (!accountNumber) {
+            return res.status(400).json({ message: 'Account number is required' });
+        }
+
+        const normalizedAccountNumber = String(accountNumber)
+            .trim()
+            .replace(/[\s-]+/g, '');
+
+        const escaped = normalizedAccountNumber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const whitespaceInsensitivePattern = new RegExp(escaped.split('').join('[\\s-]*'));
+
+        const account = await Account.findOne({
+            $or: [
+                { accountNumber: normalizedAccountNumber },
+                { accountNumber: String(accountNumber).trim() },
+                { accountNumber: whitespaceInsensitivePattern },
+            ],
+        });
+
+        if (!account) {
+            return res.status(404).json({ message: 'Account not found' });
+        }
+
+        return res.json({
+            account: {
+                _id: account._id,
+                accountNumber: account.accountNumber,
+                externalUserId: account.externalUserId,
+                status: account.status,
+                isActive: account.isActive,
+            },
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
 export const requestAccount = async (req, res) => {
     try {
         const externalUserId = req.user?.id;
