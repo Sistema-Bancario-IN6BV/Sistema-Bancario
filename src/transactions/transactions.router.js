@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createTransaction, updateTransaction, getAllTransactions, revertTransaction, changeTransactionStatus, getAccountsWithMostMovements } from "./transaction.controller.js";
+import { createTransaction, updateTransaction, getAllTransactions, revertTransaction, changeTransactionStatus, getAccountsWithMostMovements, getMyTransactions } from "./transaction.controller.js";
 import { validateTransactionStatusChange } from "../../middlewares/transaction-validators.js";
 import { validateJWT } from "../../middlewares/validate-JWT.js";
 
@@ -95,6 +95,7 @@ api.put('/update/:id', validateJWT, updateTransaction);
  *         description: Solo administradores
  */
 api.get('/get', validateJWT, getAllTransactions);
+api.get('/my', validateJWT, getMyTransactions);
 
 /**
  * @swagger
