@@ -9,6 +9,24 @@ export const createTransaction = async (req, res) => {
     try {
 
         const { type, amount, sourceAccount, destinationAccount, favoriteId, description } = req.body;
+        const normalizeAccountReference = (value) => String(value ?? '').trim().replace(/[\s-]+/g, '');
+        const isObjectId = (value) => /^[a-f\d]{24}$/i.test(String(value ?? '').trim());
+        const resolveAccount = async (reference) => {
+            const normalizedReference = normalizeAccountReference(reference);
+
+            if (!normalizedReference) {
+                return null;
+            }
+
+            if (isObjectId(normalizedReference)) {
+                const byId = await Account.findById(normalizedReference);
+                if (byId) {
+                    return byId;
+                }
+            }
+
+            return Account.findOne({ accountNumber: normalizedReference });
+        };
 
         if (!type || !amount) {
             return res.status(400).json({
@@ -28,7 +46,7 @@ export const createTransaction = async (req, res) => {
         let destination = null;
 
         if (sourceAccount) {
-            source = await Account.findById(sourceAccount);
+            source = await resolveAccount(sourceAccount);
 
             if (!source || !source.isActive || source.status !== 'ACTIVE') {
                 return res.status(404).json({
@@ -39,11 +57,7 @@ export const createTransaction = async (req, res) => {
         }
 
         if (destinationAccount) {
-            // try by id first, then fall back to accountNumber lookup
-            destination = await Account.findById(destinationAccount);
-            if (!destination) {
-                destination = await Account.findOne({ accountNumber: String(destinationAccount) });
-            }
+            destination = await resolveAccount(destinationAccount);
 
             if (!destination || !destination.isActive || destination.status !== 'ACTIVE') {
                 return res.status(404).json({
@@ -55,11 +69,13 @@ export const createTransaction = async (req, res) => {
 
         // If a favorite is provided instead of a raw destination account, resolve it
         if (!destination && favoriteId) {
-            const fav = await Favorite.findById(favoriteId);
+            const fav = isObjectId(favoriteId)
+                ? await Favorite.findById(favoriteId)
+                : await Favorite.findOne({ _id: favoriteId });
             if (!fav || !fav.isActive) {
                 return res.status(404).json({ success: false, message: 'Favorite not found or inactive' });
             }
-            destination = await Account.findById(fav.accountId);
+            destination = await resolveAccount(fav.accountId);
 
             if (!destination || !destination.isActive || destination.status !== 'ACTIVE') {
                 return res.status(404).json({
@@ -96,7 +112,7 @@ export const createTransaction = async (req, res) => {
 
             const todayTransfers = await Transaction.find({
                 type: 'TRANSFER',
-                sourceAccount: sourceAccount,
+                sourceAccount: source._id,
                 createdAt: { $gte: startOfDay }
             });
 
@@ -143,7 +159,7 @@ export const createTransaction = async (req, res) => {
 
             const todayDeposits = await Transaction.find({
                 type: 'DEPOSIT',
-                sourceAccount: sourceAccount,
+                sourceAccount: source._id,
                 createdAt: { $gte: startOfDay }
             });
 
@@ -185,10 +201,10 @@ export const createTransaction = async (req, res) => {
         const transactionPayload = {
             type,
             amount,
-            sourceAccount,
-            destinationAccount: destination ? destination._id : destinationAccount,
+            sourceAccount: source ? source._id : undefined,
+            destinationAccount: destination ? destination._id : undefined,
             description,
-            favorite: favoriteId || undefined,
+            favorite: favoriteId && isObjectId(favoriteId) ? favoriteId : undefined,
             isReversible: type === 'TRANSFER',
             initiatedBy: req.user ? String(req.user.id) : undefined
         };
@@ -212,7 +228,7 @@ export const createTransaction = async (req, res) => {
 
 export const updateTransaction = async (req, res) => {
     try {
-        if (req.user.role !== 'USER_ROLE') {
+        if (req.user.role !== 'ADMIN_ROLE') {
             return res.status(403).json({
                 success: false,
                 message: 'Only admin can update transactions'
