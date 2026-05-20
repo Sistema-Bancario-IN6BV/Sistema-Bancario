@@ -3,7 +3,7 @@ import { Router } from "express";
 import { validateJWT } from "../../middlewares/validate-JWT.js";
 import { requireRole } from "../../middlewares/validate-role.js";
 import { USER_ROLES } from "../../middlewares/validate-role.js";
-import { createAccount, updateAccount, deleteAccount, getMyAccounts, changeAccountStatus, getAccountWithMovements, purchaseWithPoints, requestAccount, getMyAccountRequests, getMyAccountSummary, getPendingAccountRequests, approveAccountRequest, rejectAccountRequest } from "./accounts.controller.js";
+import { createAccount, updateAccount, deleteAccount, getMyAccounts, changeAccountStatus, getAccountWithMovements, purchaseWithPoints, requestAccount, getMyAccountRequests, getMyAccountSummary, getPendingAccountRequests, approveAccountRequest, rejectAccountRequest, getAccountByNumber } from "./accounts.controller.js";
 import { validateCreateAccount, validateGet, validateUpdateAccount } from "../../middlewares/account-validator.js";
 import { validateAccountStatusChange } from "../../middlewares/account-validators.js";
 
@@ -53,6 +53,7 @@ api.post(
  *         description: Cuenta no encontrada
  */
 api.get('/convert-balance/:id', validateGet, convertBalance);
+api.get('/lookup/:accountNumber', validateGet, getAccountByNumber);
 
 /**
  * @swagger
