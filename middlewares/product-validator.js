@@ -10,14 +10,54 @@ export const validateCreateProduct = [
     body('name')
         .trim()
         .notEmpty()
-        .isLength({ max: 150 }),
+        .withMessage('El nombre del servicio es obligatorio')
+        .isLength({ min: 2, max: 150 })
+        .withMessage('El nombre del servicio debe tener entre 2 y 150 caracteres'),
     body('price')
         .notEmpty()
-        .isFloat({ min: 0 })
-        .withMessage('Precio debe ser un número positivo'),
+        .withMessage('El precio es obligatorio')
+        .custom((value) => {
+            if (value === '' || value === null || value === undefined) return false;
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return false;
+            if (parsed <= 0) return false;
+            return true;
+        })
+        .withMessage('El precio debe ser un número mayor a cero'),
     body('description')
-        .optional()
-        .isLength({ max: 500 }),
+        .optional({ nullable: true })
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('La descripción no puede superar 500 caracteres'),
+    checkValidators
+];
+
+export const validateUpdateProduct = [
+    validateJWT,
+    requireRole('ADMIN_ROLE'),
+    param('id').isMongoId().withMessage('ID de producto no válido'),
+    body('name')
+        .optional({ nullable: true })
+        .trim()
+        .notEmpty()
+        .withMessage('El nombre del servicio es obligatorio')
+        .isLength({ min: 2, max: 150 })
+        .withMessage('El nombre del servicio debe tener entre 2 y 150 caracteres'),
+    body('price')
+        .optional({ nullable: true })
+        .custom((value) => {
+            if (value === '' || value === null || value === undefined) return true;
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return false;
+            if (parsed <= 0) return false;
+            return true;
+        })
+        .withMessage('El precio debe ser un número mayor a cero'),
+    body('description')
+        .optional({ nullable: true })
+        .trim()
+        .isLength({ max: 500 })
+        .withMessage('La descripción no puede superar 500 caracteres'),
     checkValidators
 ];
 

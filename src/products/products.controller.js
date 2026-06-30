@@ -15,8 +15,30 @@ export const createProduct = async (req, res) => {
         }
 
         const data = req.body;
+        const name = String(data?.name ?? '').trim();
+        const description = String(data?.description ?? '').trim();
+        const price = Number(data?.price);
 
-        const product = new Product(data);
+        if (!name) {
+            return res.status(400).json({
+                success: false,
+                message: 'El nombre del servicio es obligatorio'
+            });
+        }
+
+        if (!Number.isFinite(price) || price <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'El precio debe ser un número mayor a cero'
+            });
+        }
+
+        const product = new Product({
+            ...data,
+            name,
+            description,
+            price,
+        });
         await product.save();
 
         return res.status(201).json({

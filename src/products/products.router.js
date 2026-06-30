@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createProduct, getProducts, updateProduct, deleteProduct, getProductById, purchaseProduct, changeProductStatus, getPurchasedProductsByAccount } from "./products.controller.js";
-import { validateCreateProduct, validateProductID } from "../../middlewares/product-validator.js";
+import { validateCreateProduct, validateUpdateProduct, validateProductID } from "../../middlewares/product-validator.js";
 import { validateProductStatusChange } from "../../middlewares/products-validators.js";
 import { validateJWT } from "../../middlewares/validate-JWT.js";
 
@@ -110,7 +110,7 @@ api.post('/create', validateCreateProduct, createProduct);
  *       404:
  *         description: Producto no encontrado
  */
-api.put('/update/:id', validateCreateProduct, validateProductID, updateProduct);
+api.put('/update/:id', validateUpdateProduct, updateProduct);
 
 /**
  * @swagger
