@@ -175,9 +175,16 @@ export const fastTransfer = async (req, res) => {
     try {
         const { favoriteId, sourceAccount, amount } = req.body;
 
+        if (!amount || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Amount must be greater than 0'
+            });
+        }
+
         const favorite = await Favorite.findById(favoriteId);
 
-        if (!favorite){
+        if (!favorite || !favorite.isActive){
             return res.status(404).json({
                 success: false,
                 message: 'Favorito no encontrado',
@@ -187,24 +194,53 @@ export const fastTransfer = async (req, res) => {
         const source = await Account.findById(sourceAccount);
         const destination = await Account.findById(favorite.accountId);
 
-        if (!source){
+        if (!source || !source.isActive || source.status !== 'ACTIVE'){
             return res.status(404).json({
                 success: false,
                 message: 'Cuenta de origen no encontrada',
             });
         }
 
-        if (!destination){
+        if (!destination || !destination.isActive || destination.status !== 'ACTIVE'){
             return res.status(404).json({
                 success: false,
                 message: 'Cuenta de destino no encontrada',
             });
         }
 
+        // Mismas reglas de negocio que /transactions/create (createTransaction):
+        // máximo Q2,000 por transacción y Q10,000 acumulados por día. La
+        // transferencia rápida a favoritos usaba un camino aparte que no las
+        // aplicaba, permitiendo saltarse ambos límites.
+        if (amount > 2000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot transfer more than Q2000 per transaction'
+            });
+        }
+
         if (source.balance < amount){
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: 'Saldo insuficiente en la cuenta de origen',
+            });
+        }
+
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const todayTransfers = await Transaction.find({
+            type: 'TRANSFER',
+            sourceAccount: source._id,
+            createdAt: { $gte: startOfDay }
+        });
+
+        const totalToday = todayTransfers.reduce((sum, t) => sum + t.amount, 0);
+
+        if (totalToday + amount > 10000) {
+            return res.status(400).json({
+                success: false,
+                message: 'Daily transfer limit of Q10000 exceeded'
             });
         }
 
