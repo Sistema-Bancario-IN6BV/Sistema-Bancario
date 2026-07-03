@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createTransaction, updateTransaction, getAllTransactions, revertTransaction, changeTransactionStatus, getAccountsWithMostMovements, getMyTransactions } from "./transaction.controller.js";
+import { createTransaction, updateTransaction, getAllTransactions, revertTransaction, changeTransactionStatus, getAccountsWithMostMovements, getMyTransactions, getTransactionReceipt } from "./transaction.controller.js";
 import { validateTransactionStatusChange } from "../../middlewares/transaction-validators.js";
 import { validateJWT } from "../../middlewares/validate-JWT.js";
 
@@ -123,5 +123,29 @@ api.put('/revert/:id', validateJWT, revertTransaction);
 api.put('/activate/:id', validateTransactionStatusChange, changeTransactionStatus);
 api.put('/deactivate/:id', validateTransactionStatusChange, changeTransactionStatus);
 api.get('/accounts-with-most-movements', validateJWT, getAccountsWithMostMovements);
+
+/**
+ * @swagger
+ * /transactions/{id}/receipt:
+ *   get:
+ *     summary: Descarga el comprobante de una transacción en PDF
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: PDF del comprobante
+ *       403:
+ *         description: No autorizado para ver este comprobante
+ *       404:
+ *         description: Transacción no encontrada
+ */
+api.get('/:id/receipt', validateJWT, getTransactionReceipt);
 
 export default api;
