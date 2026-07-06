@@ -36,8 +36,9 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
     try {
-        // Traer todos los productos (activos e inactivos) para administradores
-        const products = await Product.find();
+        // Administradores ven todo (activos e inactivos); el resto solo ve productos activos
+        const filter = req.user?.role === 'ADMIN_ROLE' ? {} : { isActive: true };
+        const products = await Product.find(filter);
 
         return res.json({
             success: true,

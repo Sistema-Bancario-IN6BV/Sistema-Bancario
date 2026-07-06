@@ -25,3 +25,10 @@ export const validateProductID = [
     param('id').isMongoId().withMessage('ID de producto no válido'),
     checkValidators
 ];
+
+export const validateDeleteProduct = [
+    validateJWT,
+    requireRole('ADMIN_ROLE'),
+    param('id').isMongoId().withMessage('ID de producto no válido'),
+    checkValidators
+];
