@@ -3,6 +3,8 @@
 import Product from './products.model.js';
 import Account from '../accounts/accounts.model.js';
 import Transaction from '../transactions/transaction.model.js';
+import { canAccessAccount } from '../accounts/accounts.controller.js';
+import { runInLedgerTransaction, debitAccount, InsufficientFundsError } from '../shared/ledger.service.js';
 
 export const createProduct = async (req, res) => {
     try {
@@ -36,8 +38,9 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
     try {
-        // Traer todos los productos (activos e inactivos) para administradores
-        const products = await Product.find();
+        // Administradores ven todo (activos e inactivos); el resto solo ve productos activos
+        const filter = req.user?.role === 'ADMIN_ROLE' ? {} : { isActive: true };
+        const products = await Product.find(filter);
 
         return res.json({
             success: true,
@@ -184,36 +187,61 @@ export const purchaseProduct = async (req, res) => {
             });
         }
 
-        if (account.balance < product.price) {
-            return res.status(400).json({
+        if (!canAccessAccount(account, req.user)) {
+            return res.status(403).json({
                 success: false,
-                message: 'Insufficient balance'
+                message: 'No tienes permiso sobre esta cuenta'
             });
         }
 
-        account.balance -= product.price;
         const earnedPoints = Math.floor(product.price / 10);
-        account.points += earnedPoints;
-        await account.save();
+        let updatedAccount;
+        let transaction;
 
-        const transaction = await Transaction.create({
-            type: 'PURCHASE',
-            amount: product.price,
-            sourceAccount: account._id,
-            description: `Purchase of product: ${product.name}`,
-            isReversible: false
-        });
+        try {
+            await runInLedgerTransaction(async (session) => {
+                updatedAccount = await debitAccount(account._id, product.price, session);
+                updatedAccount = await Account.findByIdAndUpdate(
+                    account._id,
+                    { $inc: { points: earnedPoints } },
+                    { returnDocument: 'after', session }
+                );
+                const [created] = await Transaction.create([{
+                    type: 'PURCHASE',
+                    amount: product.price,
+                    sourceAccount: account._id,
+                    description: `Purchase of product: ${product.name}`,
+                    isReversible: false,
+                    initiatedBy: req.user ? String(req.user.id) : undefined
+                }], { session });
+                transaction = created;
+            });
+        } catch (error) {
+            if (error instanceof InsufficientFundsError) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Insufficient balance'
+                });
+            }
+            throw error;
+        }
 
         return res.status(200).json({
             success: true,
             message: 'Product purchased successfully',
-            newBalance: account.balance,
-            newPoints: account.points,
+            newBalance: updatedAccount.balance,
+            newPoints: updatedAccount.points,
             earnedPoints,
             transaction
         });
 
     } catch (error) {
+        console.error('[products] purchaseProduct failed', {
+            productId: req.body?.productId,
+            accountId: req.body?.accountId,
+            userId: req.user?.id,
+            error: error.message
+        });
         return res.status(500).json({
             success: false,
             message: 'Error purchasing product',
