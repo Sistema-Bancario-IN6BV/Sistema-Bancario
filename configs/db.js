@@ -1,6 +1,14 @@
 'use strict';
 
+import dns from "node:dns";
 import mongoose from "mongoose";
+
+// Node's c-ares resolver can't do raw UDP SRV queries on some Windows/VPN
+// setups even though the OS resolver works fine (that's why `mongodb+srv://`
+// URIs fail with `querySrv ECONNREFUSED` while `nslookup` succeeds). Pointing
+// c-ares at public DNS sidesteps that without needing a non-SRV connection
+// string.
+dns.setServers(["8.8.8.8", "1.1.1.1", ...dns.getServers()]);
 
 export const dbConnection = async () => {
     try {

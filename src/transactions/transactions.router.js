@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createTransaction, updateTransaction, getAllTransactions, revertTransaction, changeTransactionStatus, getAccountsWithMostMovements, getMyTransactions, getTransactionReceipt } from "./transaction.controller.js";
-import { validateTransactionStatusChange } from "../../middlewares/transaction-validators.js";
+import { validateTransactionStatusChange, validateReverseTransaction } from "../../middlewares/transaction-validators.js";
 import { validateJWT } from "../../middlewares/validate-JWT.js";
 
 const api = Router();
@@ -119,7 +119,7 @@ api.get('/my', validateJWT, getMyTransactions);
  *       404:
  *         description: Transacción no encontrada
  */
-api.put('/revert/:id', validateJWT, revertTransaction);
+api.put('/revert/:id', validateReverseTransaction, revertTransaction);
 api.put('/activate/:id', validateTransactionStatusChange, changeTransactionStatus);
 api.put('/deactivate/:id', validateTransactionStatusChange, changeTransactionStatus);
 api.get('/accounts-with-most-movements', validateJWT, getAccountsWithMostMovements);
