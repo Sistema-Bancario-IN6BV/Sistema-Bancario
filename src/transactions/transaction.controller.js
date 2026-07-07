@@ -5,8 +5,6 @@ import PDFDocument from 'pdfkit';
 import Transaction from './transaction.model.js';
 import Account from '../accounts/accounts.model.js';
 import Favorite from '../favorite/favorite.model.js';
-import { canAccessAccount } from '../accounts/accounts.controller.js';
-import { runInLedgerTransaction, debitAccount, creditAccount, InsufficientFundsError } from '../shared/ledger.service.js';
 
 export const createTransaction = async (req, res) => {
     try {
@@ -88,8 +86,6 @@ export const createTransaction = async (req, res) => {
             }
         }
 
-        let transaction;
-
         if (type === 'TRANSFER') {
             if (!source || !destination) {
                 return res.status(400).json({
@@ -98,17 +94,17 @@ export const createTransaction = async (req, res) => {
                 });
             }
 
-            if (!canAccessAccount(source, req.user)) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'No tienes permiso sobre la cuenta de origen'
-                });
-            }
-
             if (amount > 2000) {
                 return res.status(400).json({
                     success: false,
                     message: 'Cannot transfer more than Q2000 per transaction'
+                });
+            }
+
+            if (source.balance < amount) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Insufficient funds'
                 });
             }
 
@@ -130,28 +126,11 @@ export const createTransaction = async (req, res) => {
                 });
             }
 
-            try {
-                transaction = await runInLedgerTransaction(async (session) => {
-                    await debitAccount(source._id, amount, session);
-                    await creditAccount(destination._id, amount, session);
-                    const [created] = await Transaction.create([{
-                        type,
-                        amount,
-                        sourceAccount: source._id,
-                        destinationAccount: destination._id,
-                        description,
-                        favorite: favoriteId && isObjectId(favoriteId) ? favoriteId : undefined,
-                        isReversible: true,
-                        initiatedBy: req.user ? String(req.user.id) : undefined
-                    }], { session });
-                    return created;
-                });
-            } catch (error) {
-                if (error instanceof InsufficientFundsError) {
-                    return res.status(400).json({ success: false, message: 'Insufficient funds' });
-                }
-                throw error;
-            }
+            source.balance -= amount;
+            destination.balance += amount;
+
+            await source.save();
+            await destination.save();
         }
 
         if (type === 'DEPOSIT') {
@@ -162,17 +141,17 @@ export const createTransaction = async (req, res) => {
                 });
             }
 
-            if (!canAccessAccount(source, req.user)) {
-                return res.status(403).json({
-                    success: false,
-                    message: 'No tienes permiso sobre la cuenta de origen'
-                });
-            }
-
             if (amount > 2000) {
                 return res.status(400).json({
                     success: false,
                     message: 'Cannot deposit more than Q2000 per transaction'
+                });
+            }
+
+            if (source.balance < amount) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Insufficient funds'
                 });
             }
 
@@ -194,28 +173,11 @@ export const createTransaction = async (req, res) => {
                 });
             }
 
-            try {
-                transaction = await runInLedgerTransaction(async (session) => {
-                    await debitAccount(source._id, amount, session);
-                    await creditAccount(destination._id, amount, session);
-                    const [created] = await Transaction.create([{
-                        type,
-                        amount,
-                        sourceAccount: source._id,
-                        destinationAccount: destination._id,
-                        description,
-                        favorite: favoriteId && isObjectId(favoriteId) ? favoriteId : undefined,
-                        isReversible: false,
-                        initiatedBy: req.user ? String(req.user.id) : undefined
-                    }], { session });
-                    return created;
-                });
-            } catch (error) {
-                if (error instanceof InsufficientFundsError) {
-                    return res.status(400).json({ success: false, message: 'Insufficient funds' });
-                }
-                throw error;
-            }
+            source.balance -= amount;
+            destination.balance += amount;
+
+            await source.save();
+            await destination.save();
         }
 
         if (type === 'CREDIT') {
@@ -233,34 +195,22 @@ export const createTransaction = async (req, res) => {
                 });
             }
 
-            transaction = await runInLedgerTransaction(async (session) => {
-                await creditAccount(destination._id, amount, session);
-                const [created] = await Transaction.create([{
-                    type,
-                    amount,
-                    sourceAccount: source ? source._id : undefined,
-                    destinationAccount: destination._id,
-                    description,
-                    favorite: favoriteId && isObjectId(favoriteId) ? favoriteId : undefined,
-                    isReversible: false,
-                    initiatedBy: req.user ? String(req.user.id) : undefined
-                }], { session });
-                return created;
-            });
+            destination.balance += amount;
+            await destination.save();
         }
 
-        if (!transaction) {
-            transaction = await Transaction.create({
-                type,
-                amount,
-                sourceAccount: source ? source._id : undefined,
-                destinationAccount: destination ? destination._id : undefined,
-                description,
-                favorite: favoriteId && isObjectId(favoriteId) ? favoriteId : undefined,
-                isReversible: type === 'TRANSFER',
-                initiatedBy: req.user ? String(req.user.id) : undefined
-            });
-        }
+        const transactionPayload = {
+            type,
+            amount,
+            sourceAccount: source ? source._id : undefined,
+            destinationAccount: destination ? destination._id : undefined,
+            description,
+            favorite: favoriteId && isObjectId(favoriteId) ? favoriteId : undefined,
+            isReversible: type === 'TRANSFER',
+            initiatedBy: req.user ? String(req.user.id) : undefined
+        };
+
+        const transaction = await Transaction.create(transactionPayload);
 
         return res.status(201).json({
             success: true,
@@ -269,14 +219,6 @@ export const createTransaction = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[transactions] createTransaction failed', {
-            type: req.body?.type,
-            sourceAccount: req.body?.sourceAccount,
-            destinationAccount: req.body?.destinationAccount,
-            amount: req.body?.amount,
-            userId: req.user?.id,
-            error: error.message
-        });
         return res.status(500).json({
             success: false,
             message: 'Error creating transaction',
@@ -322,7 +264,7 @@ export const updateTransaction = async (req, res) => {
             });
         }
 
-        if (transaction.isReversed) {
+        if (transaction.status === 'reverted') {
             return res.status(400).json({
                 success: false,
                 message: 'Cannot update a reverted transaction'
@@ -336,40 +278,52 @@ export const updateTransaction = async (req, res) => {
             });
         }
 
-        if (transaction.type === 'TRANSFER' && !transaction.destinationAccount) {
-            return res.status(400).json({
-                success: false,
-                message: 'Transfer must have destination account'
-            });
-        }
-
         const difference = amount - transaction.amount;
-        const newSourceBalance = transaction.sourceAccount.balance - difference;
-        const newDestinationBalance = transaction.destinationAccount
-            ? transaction.destinationAccount.balance + difference
-            : null;
 
-        if (newSourceBalance < 0 || (newDestinationBalance !== null && newDestinationBalance < 0)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Operation would result in negative balance'
-            });
+        if (transaction.type === 'DEPOSIT') {
+
+            if (transaction.sourceAccount.balance < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Operation would result in negative balance'
+                });
+            }
+
+            transaction.sourceAccount.balance -= difference;
+            transaction.destinationAccount.balance += difference;
+
+            await transaction.sourceAccount.save();
+            await transaction.destinationAccount.save();
         }
 
-        await runInLedgerTransaction(async (session) => {
-            await Account.findByIdAndUpdate(
-                transaction.sourceAccount._id,
-                { $inc: { balance: -difference } },
-                { session, runValidators: true }
-            );
-            await Account.findByIdAndUpdate(
-                transaction.destinationAccount._id,
-                { $inc: { balance: difference } },
-                { session, runValidators: true }
-            );
-            transaction.amount = amount;
-            await transaction.save({ session });
-        });
+        if (transaction.type === 'TRANSFER') {
+
+            if (!transaction.destinationAccount) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Transfer must have destination account'
+                });
+            }
+
+            transaction.sourceAccount.balance -= difference;
+            transaction.destinationAccount.balance += difference;
+
+            if (
+                transaction.sourceAccount.balance < 0 ||
+                transaction.destinationAccount.balance < 0
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Operation would result in negative balance'
+                });
+            }
+
+            await transaction.sourceAccount.save();
+            await transaction.destinationAccount.save();
+        }
+
+        transaction.amount = amount;
+        await transaction.save();
 
         return res.status(200).json({
             success: true,
@@ -378,12 +332,6 @@ export const updateTransaction = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[transactions] updateTransaction failed', {
-            transactionId: req.params?.id,
-            amount: req.body?.amount,
-            userId: req.user?.id,
-            error: error.message
-        });
         return res.status(500).json({
             success: false,
             message: 'Error updating transaction',
@@ -403,15 +351,10 @@ export const getAllTransactions = async (req, res) => {
             });
         }
 
-        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 100, 1), 500);
-
         const transactions = await Transaction.find({ isActive: true })
             .populate('sourceAccount')
             .populate('destinationAccount')
-            .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit);
+            .sort({ createdAt: -1 });
 
         // Prepare caching headers: short TTL + conditional responses via ETag / Last-Modified
         const payload = JSON.stringify(transactions.map(t => ({
@@ -439,21 +382,12 @@ export const getAllTransactions = async (req, res) => {
             return res.status(304).end();
         }
 
-        const total = await Transaction.countDocuments({ isActive: true });
-
         return res.json({
             success: true,
-            page,
-            limit,
-            total,
             transactions
         });
 
     } catch (error) {
-        console.error('[transactions] getAllTransactions failed', {
-            userId: req.user?.id,
-            error: error.message
-        });
         return res.status(500).json({
             success: false,
             message: 'Error fetching transactions',
@@ -475,7 +409,7 @@ export const revertTransaction = async (req, res) => {
             });
         }
 
-        if (transaction.isReversed) {
+        if (transaction.reverted) {
             return res.status(400).json({
                 success: false,
                 message: 'Transaction already reverted'
@@ -493,11 +427,9 @@ export const revertTransaction = async (req, res) => {
             });
         }
 
-        if (['TRANSFER', 'DEPOSIT'].includes(transaction.type)) {
-            const [source, destination] = await Promise.all([
-                Account.findById(transaction.sourceAccount),
-                Account.findById(transaction.destinationAccount)
-            ]);
+        if (transaction.type === 'TRANSFER') {
+            const source = await Account.findById(transaction.sourceAccount);
+            const destination = await Account.findById(transaction.destinationAccount);
 
             if (!source || !destination) {
                 return res.status(404).json({
@@ -506,26 +438,47 @@ export const revertTransaction = async (req, res) => {
                 });
             }
 
-            try {
-                await runInLedgerTransaction(async (session) => {
-                    await debitAccount(destination._id, transaction.amount, session);
-                    await creditAccount(source._id, transaction.amount, session);
-                    transaction.isReversed = true;
-                    await transaction.save({ session });
+            if (destination.balance < transaction.amount) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Destination account does not have enough balance to revert'
                 });
-            } catch (error) {
-                if (error instanceof InsufficientFundsError) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Destination account does not have enough balance to revert'
-                    });
-                }
-                throw error;
             }
-        } else {
-            transaction.isReversed = true;
-            await transaction.save();
+
+            destination.balance -= transaction.amount;
+            source.balance += transaction.amount;
+
+            await source.save();
+            await destination.save();
         }
+
+        if (transaction.type === 'DEPOSIT') {
+            const source = await Account.findById(transaction.sourceAccount);
+            const destination = await Account.findById(transaction.destinationAccount);
+
+            if (!source || !destination) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Accounts not found'
+                });
+            }
+
+            if (destination.balance < transaction.amount) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Destination account does not have enough balance to revert'
+                });
+            }
+
+            destination.balance -= transaction.amount;
+            source.balance += transaction.amount;
+
+            await source.save();
+            await destination.save();
+        }
+
+        transaction.reverted = true;
+        await transaction.save();
 
         return res.status(200).json({
             success: true,
@@ -533,11 +486,6 @@ export const revertTransaction = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[transactions] revertTransaction failed', {
-            transactionId: req.params?.id,
-            userId: req.user?.id,
-            error: error.message
-        });
         return res.status(500).json({
             success: false,
             message: 'Error reverting transaction',
@@ -571,17 +519,12 @@ export const changeTransactionStatus = async (req, res) => {
             data: transaction
         })
     } catch (error) {
-        console.error('[transactions] changeTransactionStatus failed', {
-            transactionId: req.params?.id,
-            userId: req.user?.id,
-            error: error.message
-        });
         res.status(500).json({
             success: false,
             message: 'Error al cambiar el estado de la transacción',
             error: error.message,
         });
-
+        
     }
 }
 
