@@ -3,8 +3,6 @@
 import Favorite from './favorite.model.js';
 import Account from '../accounts/accounts.model.js';
 import Transaction from '../transactions/transaction.model.js';
-import { canAccessAccount } from '../accounts/accounts.controller.js';
-import { runInLedgerTransaction, debitAccount, creditAccount, InsufficientFundsError } from '../shared/ledger.service.js';
 
 export const addFavorite = async (req, res) => {
     try {
@@ -203,13 +201,6 @@ export const fastTransfer = async (req, res) => {
             });
         }
 
-        if (!canAccessAccount(source, req.user)) {
-            return res.status(403).json({
-                success: false,
-                message: 'No tienes permiso sobre la cuenta de origen'
-            });
-        }
-
         if (!destination || !destination.isActive || destination.status !== 'ACTIVE'){
             return res.status(404).json({
                 success: false,
@@ -225,6 +216,13 @@ export const fastTransfer = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Cannot transfer more than Q2000 per transaction'
+            });
+        }
+
+        if (source.balance < amount){
+            return res.status(400).json({
+                success: false,
+                message: 'Saldo insuficiente en la cuenta de origen',
             });
         }
 
@@ -246,31 +244,20 @@ export const fastTransfer = async (req, res) => {
             });
         }
 
-        let transaction;
-        try {
-            transaction = await runInLedgerTransaction(async (session) => {
-                await debitAccount(source._id, amount, session);
-                await creditAccount(destination._id, amount, session);
-                const [created] = await Transaction.create([{
-                    type: 'TRANSFER',
-                    amount,
-                    sourceAccount: source._id,
-                    destinationAccount: destination._id,
-                    description: `Transferencia rápida a ${destination.accountNumber}`,
-                    isReversible: true,
-                    initiatedBy: req.user ? String(req.user.id) : undefined
-                }], { session });
-                return created;
-            });
-        } catch (error) {
-            if (error instanceof InsufficientFundsError) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Saldo insuficiente en la cuenta de origen',
-                });
-            }
-            throw error;
-        }
+        source.balance -= amount;
+        destination.balance += amount;
+
+        await source.save();
+        await destination.save();
+
+        const transaction = await Transaction.create({
+            type: 'TRANSFER',
+            amount,
+            sourceAccount,
+            destinationAccount: destination._id,
+            description: `Transferencia rápida a ${destination.accountNumber}`,
+            isReversible: true
+        });
 
         return res.status(200).json({
             success: true,
@@ -280,13 +267,6 @@ export const fastTransfer = async (req, res) => {
 
 
     } catch (error) {
-        console.error('[favorites] fastTransfer failed', {
-            favoriteId: req.body?.favoriteId,
-            sourceAccount: req.body?.sourceAccount,
-            amount: req.body?.amount,
-            userId: req.user?.id,
-            error: error.message
-        });
         res.status(500).json({
             success: false,
             message: 'Error al realizar la transferencia rápida',
