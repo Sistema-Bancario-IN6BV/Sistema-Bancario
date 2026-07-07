@@ -5,7 +5,6 @@ import AccountRequest from './account-request.model.js';
 import Product from '../products/products.model.js';
 import Transaction from '../transactions/transaction.model.js';
 import { convertCurrency } from './currency.service.js';
-import { runInLedgerTransaction, debitPoints, InsufficientFundsError } from '../shared/ledger.service.js';
 
 const generateAccountNumber = () => {
     const entityCode = '1008';
@@ -35,7 +34,7 @@ const hasPendingAccountRequest = async (externalUserId) => {
     return AccountRequest.exists({ externalUserId, status: 'PENDING' });
 };
 
-export const canAccessAccount = (account, user) => {
+const canAccessAccount = (account, user) => {
     if (!account || !user) {
         return false;
     }
@@ -258,28 +257,12 @@ export const rejectAccountRequest = async (req, res) => {
 
 export const getMyAccounts = async (req, res) => {
     try {
-        const isAdmin = req.user?.role === 'ADMIN_ROLE';
-        const filter = isAdmin
+        const filter = req.user?.role === 'ADMIN_ROLE'
             ? {}
             : { externalUserId: req.user?.id, isActive: true };
 
-        if (!isAdmin) {
-            const accounts = await Account.find(filter).sort({ createdAt: -1 });
-            return res.json(accounts);
-        }
-
-        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 100, 1), 500);
-
-        const [accounts, total] = await Promise.all([
-            Account.find(filter)
-                .sort({ createdAt: -1 })
-                .skip((page - 1) * limit)
-                .limit(limit),
-            Account.countDocuments(filter)
-        ]);
-
-        return res.json({ page, limit, total, accounts });
+        const accounts = await Account.find(filter).sort({ createdAt: -1 });
+        return res.json(accounts);
     } catch (error) {
         return res.status(500).json({ message: error.message });
     }
@@ -427,46 +410,32 @@ export const purchaseWithPoints = async (req, res) => {
         }
 
         const price = Number(product.price);
-
-        let updatedAccount;
-        let transaction;
-
-        try {
-            await runInLedgerTransaction(async (session) => {
-                updatedAccount = await debitPoints(account._id, price, session);
-                const [created] = await Transaction.create([{
-                    type: 'POINT_PURCHASE',
-                    amount: price,
-                    sourceAccount: account._id,
-                    description: `Purchase with points: ${product.name}`,
-                    isReversible: false,
-                    isReversed: false,
-                    isActive: true,
-                    initiatedBy: req.user ? String(req.user.id) : undefined
-                }], { session });
-                transaction = created;
-            });
-        } catch (error) {
-            if (error instanceof InsufficientFundsError) {
-                return res.status(400).json({ message: 'Not enough points' });
-            }
-            throw error;
+        if ((account.points || 0) < price) {
+            return res.status(400).json({ message: 'Not enough points' });
         }
+
+        account.points = (account.points || 0) - price;
+        await account.save();
+
+        const transaction = await Transaction.create({
+            type: 'POINT_PURCHASE',
+            amount: price,
+            sourceAccount: account._id,
+            description: `Purchase with points: ${product.name}`,
+            isReversible: false,
+            isReversed: false,
+            isActive: true,
+        });
 
         return res.status(200).json({
             success: true,
             message: 'Product purchased successfully with points',
             product: product.name,
-            remainingPoints: updatedAccount.points,
+            remainingPoints: account.points,
             transaction,
         });
     } catch (error) {
-        console.error('[accounts] purchaseWithPoints failed', {
-            accountId: req.body?.accountId,
-            productId: req.body?.productId,
-            userId: req.user?.id,
-            error: error.message
-        });
+        console.error(error);
         return res.status(500).json({ message: 'Server error' });
     }
 };
