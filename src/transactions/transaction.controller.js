@@ -1,6 +1,7 @@
 'use strict';
 
 import crypto from 'crypto';
+import PDFDocument from 'pdfkit';
 import Transaction from './transaction.model.js';
 import Account from '../accounts/accounts.model.js';
 import Favorite from '../favorite/favorite.model.js';
@@ -675,5 +676,76 @@ export const getMyTransactions = async (req, res) => {
         return res.json({ success: true, transactions });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Error fetching user transactions', error: error.message });
+    }
+};
+
+const maskAccountNumber = (accountNumber) => {
+    const value = String(accountNumber || '');
+    return value.length > 4 ? `••••${value.slice(-4)}` : value;
+};
+
+export const getTransactionReceipt = async (req, res) => {
+    try {
+        const transaction = await Transaction.findById(req.params.id)
+            .populate('sourceAccount')
+            .populate('destinationAccount');
+
+        if (!transaction || !transaction.isActive) {
+            return res.status(404).json({ success: false, message: 'Transacción no encontrada' });
+        }
+
+        if (req.user.role !== 'ADMIN_ROLE') {
+            const accounts = await Account.find({ externalUserId: String(req.user.id) });
+            const accountIds = accounts.map(a => String(a._id));
+            const sourceId = transaction.sourceAccount ? String(transaction.sourceAccount._id) : null;
+            const destinationId = transaction.destinationAccount ? String(transaction.destinationAccount._id) : null;
+            const owns = (sourceId && accountIds.includes(sourceId)) || (destinationId && accountIds.includes(destinationId));
+
+            if (!owns) {
+                return res.status(403).json({ success: false, message: 'No autorizado para ver este comprobante' });
+            }
+        }
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="comprobante-${transaction._id}.pdf"`);
+        doc.pipe(res);
+
+        // Cabecera "Bi Digital Blue"
+        doc.rect(0, 0, doc.page.width, 90).fill('#002241');
+        doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(20).text('Banco Digital', 50, 30);
+        doc.font('Helvetica').fontSize(12).text('Comprobante de transacción', 50, 58);
+
+        doc.y = 120;
+        doc.fillColor('#1a1c1c');
+
+        const row = (label, value) => {
+            doc.font('Helvetica-Bold').fontSize(11).text(label, 50, doc.y, { continued: true });
+            doc.font('Helvetica').text(`  ${value ?? '-'}`);
+            doc.moveDown(0.5);
+        };
+
+        row('Tipo:', transaction.type);
+        row('Monto:', `Q ${Number(transaction.amount).toFixed(2)}`);
+        row('Estado:', transaction.status);
+        row('Fecha:', new Date(transaction.createdAt).toLocaleString('es-GT'));
+        if (transaction.sourceAccount) {
+            row('Cuenta origen:', maskAccountNumber(transaction.sourceAccount.accountNumber));
+        }
+        if (transaction.destinationAccount) {
+            row('Cuenta destino:', maskAccountNumber(transaction.destinationAccount.accountNumber));
+        }
+        if (transaction.reference) {
+            row('Referencia:', transaction.reference);
+        }
+        if (transaction.description) {
+            row('Descripción:', transaction.description);
+        }
+        row('ID de transacción:', String(transaction._id));
+
+        doc.end();
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error generando el comprobante', error: error.message });
     }
 };

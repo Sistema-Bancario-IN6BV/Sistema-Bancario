@@ -24,6 +24,13 @@ const productSchema = mongoose.Schema(
             type: Boolean,
             default: true
         },
+        type: {
+            type: String,
+            enum: ['product', 'service'],
+            default: 'product',
+            lowercase: true,
+            trim: true
+        },
 
     },
     {
